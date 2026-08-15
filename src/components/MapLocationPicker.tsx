@@ -125,6 +125,44 @@ export default function MapLocationPicker({
         </button>
       </div>
 
+      {/* Search Address Bar with Nominatim Geocoding */}
+      <div className="relative">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Search city, district, or street address (e.g. Dago Bandung, Menteng Jakarta)..."
+            className="w-full rounded-xl border border-white/10 bg-slate-800/90 px-3.5 py-2 text-xs text-white placeholder-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+            onKeyDown={async (e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                const query = (e.target as HTMLInputElement).value;
+                if (!query.trim()) return;
+                setLocating(true);
+                try {
+                  const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+                  const data = await res.json();
+                  if (data && data.length > 0) {
+                    const searchLat = parseFloat(data[0].lat);
+                    const searchLng = parseFloat(data[0].lon);
+                    setAddressLabel(data[0].display_name);
+                    updateCoordinates(searchLat, searchLng);
+                  } else {
+                    alert('Location not found. Please try another search term or click on a quick city preset.');
+                  }
+                } catch (err) {
+                  console.error('Geocoding error:', err);
+                } finally {
+                  setLocating(false);
+                }
+              }
+            }}
+          />
+        </div>
+        <span className="text-[10px] text-slate-400 mt-1 block">
+          💡 Press <strong className="text-cyan-400">Enter</strong> to search and pin any custom address or city.
+        </span>
+      </div>
+
       {/* Interactive Map Visual Simulation with Pin & OpenStreetMap Tile */}
       <div className="relative h-48 w-full overflow-hidden rounded-xl border border-white/10 bg-slate-950">
         {/* OpenStreetMap Static/Interactive Tile Frame */}
