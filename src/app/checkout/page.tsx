@@ -35,7 +35,7 @@ interface CourierOption {
   badgeColor: string;
 }
 
-const COURIER_OPTIONS: CourierOption[] = [
+const DOMESTIC_COURIER_OPTIONS: CourierOption[] = [
   {
     id: 'jne',
     name: 'JNE Express',
@@ -83,6 +83,45 @@ const COURIER_OPTIONS: CourierOption[] = [
   },
 ];
 
+const INTERNATIONAL_COURIER_OPTIONS: CourierOption[] = [
+  {
+    id: 'dhl',
+    name: 'DHL Express Worldwide',
+    service: 'Air Priority Cargo',
+    eta: '3 - 5 Days',
+    baseCost: 250000,
+    perKm: 65,
+    badgeColor: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
+  },
+  {
+    id: 'fedex',
+    name: 'FedEx International',
+    service: 'International Priority',
+    eta: '3 - 5 Days',
+    baseCost: 275000,
+    perKm: 70,
+    badgeColor: 'border-purple-500/30 bg-purple-500/10 text-purple-300',
+  },
+  {
+    id: 'pos_ems',
+    name: 'Pos Indonesia EMS',
+    service: 'Global Express Mail',
+    eta: '5 - 8 Days',
+    baseCost: 180000,
+    perKm: 50,
+    badgeColor: 'border-orange-500/30 bg-orange-500/10 text-orange-300',
+  },
+  {
+    id: 'ups',
+    name: 'UPS Worldwide',
+    service: 'Expedited Air Flight',
+    eta: '4 - 6 Days',
+    baseCost: 260000,
+    perKm: 68,
+    badgeColor: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
+  },
+];
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart, cartTotal, clearCart } = useCart();
@@ -104,6 +143,10 @@ export default function CheckoutPage() {
   const [distanceKm, setDistanceKm] = useState<number>(5.2);
   const [selectedCourierId, setSelectedCourierId] = useState<string>('jne');
 
+  // Dynamic courier pool based on distance
+  const activeCourierOptions = distanceKm > 3800 ? INTERNATIONAL_COURIER_OPTIONS : DOMESTIC_COURIER_OPTIONS;
+  const selectedCourier = activeCourierOptions.find((c) => c.id === selectedCourierId) || activeCourierOptions[0];
+
   // Payment Proof Upload State (for Bank Transfer)
   const [paymentProofUrl, setPaymentProofUrl] = useState<string>('');
   const [uploadingProof, setUploadingProof] = useState<boolean>(false);
@@ -112,7 +155,6 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Financial Calculations
-  const selectedCourier = COURIER_OPTIONS.find((c) => c.id === selectedCourierId) || COURIER_OPTIONS[0];
   const shippingCost = Math.round(selectedCourier.baseCost + distanceKm * selectedCourier.perKm);
   const adminFee = Math.round(cartTotal * 0.025); // 2.5% Admin fee
   const grandTotal = cartTotal + shippingCost + adminFee;
@@ -503,7 +545,7 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="mt-4 space-y-3">
-                  {COURIER_OPTIONS.map((courier) => {
+                  {activeCourierOptions.map((courier) => {
                     const isInstantBike = courier.id === 'instant';
                     const isBikeDisabled = isInstantBike && distanceKm > 35;
                     const cost = Math.round(courier.baseCost + distanceKm * courier.perKm);
