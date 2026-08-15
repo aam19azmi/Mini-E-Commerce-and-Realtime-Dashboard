@@ -288,10 +288,20 @@ export default function InvoicePage() {
               <span>Subtotal Produk (DPP)</span>
               <span className="font-semibold text-slate-900">{formatPrice(dppSubtotal)}</span>
             </div>
-            <div className="flex justify-between text-slate-600">
-              <span>PPN Pajak Pertambahan Nilai (11%)</span>
-              <span className="font-semibold text-slate-900">{formatPrice(ppnTax)}</span>
-            </div>
+            {invoice.destination_lat && (Number(invoice.destination_lat) > 6.5 || Number(invoice.destination_lat) < -11.5 || Number(invoice.destination_lng) < 95.0 || Number(invoice.destination_lng) > 141.5) ? (
+              <div className="flex justify-between text-slate-600">
+                <span className="flex items-center gap-1">
+                  <span>PPN Ekspor (0% Cross-Border)</span>
+                  <span className="rounded bg-emerald-100 px-1 text-[9px] font-bold text-emerald-800">Zero-Rated</span>
+                </span>
+                <span className="font-semibold text-emerald-700">Rp 0 (Exempt)</span>
+              </div>
+            ) : (
+              <div className="flex justify-between text-slate-600">
+                <span>PPN Pajak Pertambahan Nilai (11%)</span>
+                <span className="font-semibold text-slate-900">{formatPrice(ppnTax)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-slate-600">
               <span>Ongkos Kirim ({invoice.shipping_courier || 'JNE Express'})</span>
               <span className="font-semibold text-slate-900">{formatPrice(shippingCost)}</span>
