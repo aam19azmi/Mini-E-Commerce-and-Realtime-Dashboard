@@ -698,6 +698,15 @@ export default function CheckoutPage() {
                   <span className="font-semibold text-white">{formatPrice(cartTotal)}</span>
                 </div>
                 <div className="flex justify-between text-slate-400">
+                  <span className="flex items-center gap-1.5">
+                    <span>Pajak PPN (11% Terhitung)</span>
+                    <span className="rounded bg-indigo-500/20 px-1.5 py-0.2 text-[9px] font-bold text-indigo-300">Termasuk</span>
+                  </span>
+                  <span className="font-semibold text-indigo-300">
+                    {formatPrice(Math.round(cartTotal - cartTotal / 1.11))}
+                  </span>
+                </div>
+                <div className="flex justify-between text-slate-400">
                   <span>Courier Shipping ({selectedCourier.name})</span>
                   <span className="font-semibold text-cyan-400">{formatPrice(shippingCost)}</span>
                 </div>

@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { MapPin, Navigation, Compass, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { MapPin, Navigation, Compass, CheckCircle2, AlertCircle, Search, Loader2 } from 'lucide-react';
+import 'leaflet/dist/leaflet.css';
 
 // Store Origin: NovaStore Central Hub, Jakarta
 const STORE_ORIGIN = {
@@ -45,22 +46,122 @@ export default function MapLocationPicker({
   const [lng, setLng] = useState<number>(initialLng);
   const [distanceKm, setDistanceKm] = useState<number>(5.2);
   const [locating, setLocating] = useState<boolean>(false);
-  const [addressLabel, setAddressLabel] = useState<string>('Jakarta Pusat Area (Approx. 5.2 km from Warehouse)');
-  const [geocoding, setGeocoding] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [addressLabel, setAddressLabel] = useState<string>('Jakarta Pusat Area (Approx. 5.2 km from Central Hub)');
+  
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+
+  // Reverse geocode to get actual city / address name
+  const reverseGeocode = async (latitude: number, longitude: number) => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+      const data = await res.json();
+      if (data && data.display_name) {
+        setAddressLabel(data.display_name);
+        return data.display_name;
+      }
+    } catch (e) {
+      console.warn('Reverse geocode error:', e);
+    }
+    return `Pin: ${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`;
+  };
 
   // Update distance when coordinates change
-  const updateCoordinates = (newLat: number, newLng: number) => {
+  const updateCoordinates = async (newLat: number, newLng: number, explicitAddress?: string) => {
     setLat(newLat);
     setLng(newLng);
     const dist = calculateDistanceKm(STORE_ORIGIN.lat, STORE_ORIGIN.lng, newLat, newLng);
     const calculatedDist = Math.max(1.5, dist);
     setDistanceKm(calculatedDist);
+
+    let address = explicitAddress;
+    if (!address) {
+      address = await reverseGeocode(newLat, newLng);
+    } else {
+      setAddressLabel(address);
+    }
+
     onLocationSelect({
       lat: newLat,
       lng: newLng,
       distanceKm: calculatedDist,
-      addressText: addressLabel,
+      addressText: address,
     });
+  };
+
+  // Initialize Interactive Leaflet Map on Client Side
+  useEffect(() => {
+    if (typeof window === 'undefined' || !mapContainerRef.current) return;
+
+    let isMounted = true;
+
+    async function initMap() {
+      const L = (await import('leaflet')).default;
+
+      // Fix default Leaflet icon paths
+      const customIcon = L.icon({
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+      });
+
+      if (!mapInstanceRef.current && mapContainerRef.current) {
+        const map = L.map(mapContainerRef.current).setView([lat, lng], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors',
+          maxZoom: 19,
+        }).addTo(map);
+
+        const marker = L.marker([lat, lng], {
+          draggable: true,
+          icon: customIcon,
+        }).addTo(map);
+
+        marker.bindPopup('<b>Your Delivery Destination</b><br>Click anywhere or drag this pin!').openPopup();
+
+        // 1. Drag pin event
+        marker.on('dragend', async (e: any) => {
+          const position = e.target.getLatLng();
+          await updateCoordinates(position.lat, position.lng);
+        });
+
+        // 2. Click anywhere on the map to move pin
+        map.on('click', async (e: any) => {
+          const { lat: clickedLat, lng: clickedLng } = e.latlng;
+          marker.setLatLng([clickedLat, clickedLng]);
+          map.panTo([clickedLat, clickedLng]);
+          await updateCoordinates(clickedLat, clickedLng);
+        });
+
+        mapInstanceRef.current = map;
+        markerRef.current = marker;
+      }
+    }
+
+    initMap();
+
+    return () => {
+      isMounted = false;
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, []);
+
+  // Update map center and marker when lat/lng changes externally
+  const moveMapTo = (newLat: number, newLng: number, zoomLevel = 14) => {
+    if (mapInstanceRef.current && markerRef.current) {
+      markerRef.current.setLatLng([newLat, newLng]);
+      mapInstanceRef.current.flyTo([newLat, newLng], zoomLevel, { duration: 1.2 });
+    }
   };
 
   const handleGetCurrentLocation = () => {
@@ -70,25 +171,41 @@ export default function MapLocationPicker({
     }
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const userLat = Number(position.coords.latitude.toFixed(6));
         const userLng = Number(position.coords.longitude.toFixed(6));
-        setAddressLabel(`Exact GPS Coordinates: ${userLat}, ${userLng}`);
-        updateCoordinates(userLat, userLng);
+        moveMapTo(userLat, userLng, 15);
+        await updateCoordinates(userLat, userLng);
         setLocating(false);
       },
       (error) => {
         console.warn('Geolocation error:', error);
-        // Fallback default variation
-        const randomOffset = (Math.random() - 0.5) * 0.05;
-        const newLat = Number((initialLat + randomOffset).toFixed(6));
-        const newLng = Number((initialLng + randomOffset).toFixed(6));
-        setAddressLabel('Selected Location Pin (Within Greater Jakarta)');
-        updateCoordinates(newLat, newLng);
         setLocating(false);
       },
       { timeout: 10000, enableHighAccuracy: true }
     );
+  };
+
+  const handleSearchSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    setLocating(true);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`);
+      const data = await res.json();
+      if (data && data.length > 0) {
+        const searchLat = parseFloat(data[0].lat);
+        const searchLng = parseFloat(data[0].lon);
+        moveMapTo(searchLat, searchLng, 14);
+        await updateCoordinates(searchLat, searchLng, data[0].display_name);
+      } else {
+        alert('Location not found. Please try another search term or click directly on the map.');
+      }
+    } catch (err) {
+      console.error('Geocoding error:', err);
+    } finally {
+      setLocating(false);
+    }
   };
 
   // Preset location quick selectors (Popular regions in Indonesia)
@@ -109,8 +226,8 @@ export default function MapLocationPicker({
             <Compass className="h-4 w-4" />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-white">Delivery Geolocation Pin</h4>
-            <p className="text-[11px] text-slate-400">Pinpoint coordinates to calculate exact courier shipping tariff</p>
+            <h4 className="text-xs font-bold text-white">Interactive Delivery Pin &amp; Map</h4>
+            <p className="text-[11px] text-slate-400">Click anywhere on the map or drag the pin to set your exact location</p>
           </div>
         </div>
 
@@ -120,78 +237,64 @@ export default function MapLocationPicker({
           disabled={locating}
           className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 px-3.5 py-1.5 text-xs font-bold text-white shadow-md shadow-indigo-500/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
         >
-          <Navigation className={`h-3.5 w-3.5 ${locating ? 'animate-spin' : ''}`} />
+          {locating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Navigation className="h-3.5 w-3.5" />}
           <span>{locating ? 'Detecting GPS...' : 'Use My Current GPS'}</span>
         </button>
       </div>
 
-      {/* Search Address Bar with Nominatim Geocoding */}
-      <div className="relative">
+      {/* Search Address Bar */}
+      <form onSubmit={handleSearchSubmit} className="relative">
         <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Search city, district, or street address (e.g. Dago Bandung, Menteng Jakarta)..."
-            className="w-full rounded-xl border border-white/10 bg-slate-800/90 px-3.5 py-2 text-xs text-white placeholder-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-            onKeyDown={async (e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                const query = (e.target as HTMLInputElement).value;
-                if (!query.trim()) return;
-                setLocating(true);
-                try {
-                  const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
-                  const data = await res.json();
-                  if (data && data.length > 0) {
-                    const searchLat = parseFloat(data[0].lat);
-                    const searchLng = parseFloat(data[0].lon);
-                    setAddressLabel(data[0].display_name);
-                    updateCoordinates(searchLat, searchLng);
-                  } else {
-                    alert('Location not found. Please try another search term or click on a quick city preset.');
-                  }
-                } catch (err) {
-                  console.error('Geocoding error:', err);
-                } finally {
-                  setLocating(false);
-                }
-              }
-            }}
-          />
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search province, city, district, or street (e.g. Dago Bandung, Menteng Jakarta)..."
+              className="w-full rounded-xl border border-white/10 bg-slate-800/90 pl-9 pr-3.5 py-2 text-xs text-white placeholder-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={locating}
+            className="rounded-xl bg-slate-800 px-3.5 py-2 text-xs font-semibold text-cyan-400 hover:bg-slate-700 border border-white/10"
+          >
+            Search
+          </button>
         </div>
         <span className="text-[10px] text-slate-400 mt-1 block">
-          💡 Press <strong className="text-cyan-400">Enter</strong> to search and pin any custom address or city.
+          💡 Click anywhere on the map below or search above to move your delivery pin.
         </span>
-      </div>
+      </form>
 
-      {/* Interactive Map Visual Simulation with Pin & OpenStreetMap Tile */}
-      <div className="relative h-48 w-full overflow-hidden rounded-xl border border-white/10 bg-slate-950">
-        {/* OpenStreetMap Static/Interactive Tile Frame */}
-        <iframe
-          title="Delivery Location Map"
-          width="100%"
-          height="100%"
-          frameBorder="0"
-          scrolling="no"
-          marginHeight={0}
-          marginWidth={0}
-          src={`https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.04}%2C${
-            lat - 0.04
-          }%2C${lng + 0.04}%2C${lat + 0.04}&layer=mapnik&marker=${lat}%2C${lng}`}
-          className="opacity-80 contrast-125 filter grayscale-[30%]"
-        />
+      {/* Real Interactive Leaflet Map Container */}
+      <div className="relative h-56 w-full overflow-hidden rounded-xl border border-cyan-500/30 bg-slate-950 shadow-inner">
+        <div ref={mapContainerRef} className="h-full w-full z-0" />
 
         {/* Overlay Coordinates HUD */}
-        <div className="absolute top-2 left-2 rounded-lg bg-slate-950/90 px-2.5 py-1 text-[10px] font-mono text-cyan-300 border border-cyan-500/30 backdrop-blur-md shadow-lg flex items-center gap-1.5">
+        <div className="absolute top-2 left-2 z-10 rounded-lg bg-slate-950/90 px-2.5 py-1 text-[10px] font-mono text-cyan-300 border border-cyan-500/30 backdrop-blur-md shadow-lg flex items-center gap-1.5 pointer-events-none">
           <span className="h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
           <span>PIN: {lat.toFixed(4)}°, {lng.toFixed(4)}°</span>
         </div>
 
         {/* Distance Badge HUD */}
-        <div className="absolute bottom-2 right-2 rounded-lg bg-slate-950/90 px-3 py-1.5 text-xs font-bold text-white border border-white/10 backdrop-blur-md shadow-lg flex items-center gap-1.5">
+        <div className="absolute bottom-2 right-2 z-10 rounded-lg bg-slate-950/90 px-3 py-1.5 text-xs font-bold text-white border border-white/10 backdrop-blur-md shadow-lg flex items-center gap-1.5 pointer-events-none">
           <MapPin className="h-3.5 w-3.5 text-emerald-400" />
           <span>Distance: <strong className="text-emerald-400">{distanceKm} km</strong></span>
         </div>
       </div>
+
+      {/* Selected Address Display */}
+      {addressLabel && (
+        <div className="rounded-xl border border-white/5 bg-slate-950/60 p-2.5 text-xs text-slate-300 flex items-start gap-2">
+          <MapPin className="h-4 w-4 text-cyan-400 flex-shrink-0 mt-0.5" />
+          <div className="text-[11px] leading-relaxed">
+            <span className="font-semibold text-white block">Selected Address:</span>
+            <span className="text-slate-400">{addressLabel}</span>
+          </div>
+        </div>
+      )}
 
       {/* Quick Region Selector Pills */}
       <div>
@@ -205,9 +308,9 @@ export default function MapLocationPicker({
               <button
                 key={preset.label}
                 type="button"
-                onClick={() => {
-                  setAddressLabel(`Destination: ${preset.label}`);
-                  updateCoordinates(preset.lat, preset.lng);
+                onClick={async () => {
+                  moveMapTo(preset.lat, preset.lng, 13);
+                  await updateCoordinates(preset.lat, preset.lng, `City of ${preset.label}`);
                 }}
                 className={`rounded-lg px-2.5 py-1 text-[11px] font-medium border transition-all ${
                   isSelected
