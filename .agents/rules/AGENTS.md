@@ -59,7 +59,7 @@ This project is a technical test to build a **Mini E-Commerce and Realtime Dashb
    - PRD (Product Requirement Document).
    - ERD (Entity Relationship Diagram) using Mermaid.js.
    - Flowcharts of the system using Mermaid.js.
-   - LaTeX scripts for converting documentation to Word/PDF.
+   - html scripts for converting documentation to Word/PDF.
    - Setup instructions for capturing screenshots (UI only).
 9. **AI Tool Tracking**: Actively track and log all major prompts and steps taken in `docs/AI_PROMPT_LOG.md`. Ensure this is exportable for the "Log Prompting AI" document submission.
 10. **Proactive Planning & Verification**: Before major implementations, formulate a clear plan, verify Supabase schema requirements, ensure Next.js App Router best practices are followed, and verify with `npm run build` with 0 errors.

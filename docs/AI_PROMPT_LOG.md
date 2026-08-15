@@ -111,4 +111,16 @@ This document serves as the official AI Prompting Log for the **NovaStore Mini E
   4. Built **1-Click Database Reset Modal** in Admin Dashboard offering two modes (Clear Test Orders vs. Full Pristine Restore) with guaranteed isolation of `admin@novastore.com`.
   5. Updated `.agents/rules/AGENTS.md` with strict mandatory protocol requiring `implementation_plan.md`, `walkthrough.md`, and complete synchronization across the `docs/` directory.
 
+---
+
+## 📅 Session 11: Persistent Reset State, Realtime Receipt Fix, Corporate Footer & Customer Return SOP
+- **User Prompt:** "Now add rule again when you work or do something regarding implementation plan always create task.md or renew that base what will or you done. Is this mini e-commerce was do below (CSS reset, vendor prefixes, incognito)? I just testing Reset Data It's not work because when I refreshed browser the data is comeback. To view the attached receipt, I have to reload the page after changing the status in order to see it. Also, if a customer wants to return an item they ordered, what should we do? Should we change the footer content on storefront to information about NovaStore such as location, contact details, or other information instead? And for customer return they ordered should they delivery the ordered comeback to us first or we return they payment first?"
+- **Key Engineering Actions:**
+  1. Updated `.agents/rules/AGENTS.md` to mandate `task.md` creation and granular checklist maintenance alongside implementation plans.
+  2. Fixed **Persistent Cleared State** on Reset Data by adding PostgreSQL `DELETE` RLS policies on `orders` / `order_items` in `supabase/schema.sql` and managing persistent state in `fetchOrders()`.
+  3. Fixed **Realtime Receipt Preview** in `src/app/admin/dashboard/page.tsx` by merging WebSocket `UPDATE` events while preserving `payment_proof_url`.
+  4. Built comprehensive corporate **`Footer.tsx`** featuring brand story, headquarters address in Jakarta, customer support contacts (+62 812-9876-5432 / support@novastore.com), operational hours, return policy guarantee, and logistics/payment partner badges.
+  5. Documented and formalized the **Customer Return (RMA) SOP**: Customer ships item back to warehouse first &rarr; Physical inspection & verification &rarr; Status marked as `Cancelled` (stock automatically restored) &rarr; Full monetary refund issued within 24 hours.
+
+
 

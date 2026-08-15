@@ -3,8 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase, Product } from '@/lib/supabase';
 import ProductCard from '@/components/ProductCard';
-import { Search, Sparkles, ShieldCheck, Zap, RefreshCw, ShoppingBag, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import { Search, Sparkles, ShieldCheck, Zap, RefreshCw, ShoppingBag } from 'lucide-react';
 
 // Fallback seed items in case Supabase is not yet populated
 const FALLBACK_PRODUCTS: Product[] = [
@@ -206,32 +205,6 @@ export default function StorefrontPage() {
               ))}
             </div>
           )}
-        </div>
-      </section>
-
-      {/* Admin Demo Callout */}
-      <section className="mx-auto mt-20 max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl border border-indigo-500/20 bg-gradient-to-r from-indigo-950/60 via-slate-900 to-slate-950 p-8 sm:p-12">
-          <div className="max-w-2xl">
-            <span className="rounded-full bg-indigo-500/20 px-3 py-1 text-xs font-semibold text-indigo-300 border border-indigo-500/30">
-              Live Real-Time Monitoring
-            </span>
-            <h2 className="mt-4 text-2xl font-bold text-white sm:text-3xl">
-              Monitor Orders in Real-Time as Customers Checkout
-            </h2>
-            <p className="mt-2 text-sm text-slate-400">
-              Every order submitted through guest checkout instantly broadcasts to the Admin Dashboard using Supabase Realtime subscriptions. Open the admin panel to watch live transactions arrive without page reloads!
-            </p>
-            <div className="mt-6 flex flex-wrap gap-4">
-              <Link
-                href="/admin/dashboard"
-                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-xs font-bold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition-all hover:scale-105"
-              >
-                <span>Open Admin Realtime Dashboard</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </div>
         </div>
       </section>
     </div>
