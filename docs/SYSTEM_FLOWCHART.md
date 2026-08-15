@@ -66,21 +66,45 @@ sequenceDiagram
     end
     Customer->>UI: Click "Place Order"
     UI->>DB: INSERT into orders & order_items
+    UI->>DB: Decrement product stock (stock = max(0, stock - quantity))
     DB-->>RT: Broadcast postgres_changes (INSERT event)
-    RT-->>Admin: Instant Live Sound/Visual Alert on Dashboard!
+    RT-->>Admin: Instant Live Visual & WebSocket Alert on Dashboard!
     UI->>Customer: Display Order Confirmation & Official Tax Invoice
 ```
 
 ---
 
-## 3. Real-time Order Verification & Fulfillment Lifecycle
+## 3. Real-time Order Verification & Inventory Lifecycle
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Pending: Guest Checkout Submitted
+    [*] --> Pending: Guest Checkout Submitted (Stock Deducted)
     Pending --> Processing: Admin Approves Payment Receipt Proof
-    Pending --> Cancelled: Payment Invalid / Out of Stock
+    Pending --> Cancelled: Payment Invalid / Rejected (Stock Automatically Replenished)
     Processing --> Completed: Courier Dispatched & Delivered
+    Cancelled --> Processing: Admin Re-activates Order (Stock Re-deducted)
     Completed --> [*]
     Cancelled --> [*]
 ```
+
+---
+
+## 4. Store Operations & Database Reset Architecture
+
+```mermaid
+flowchart TD
+    Admin["Store Administrator"] --> Actions{"Admin Action"}
+    
+    Actions -->|"Simulate Order"| Sim["1-Click Real-time Order Simulation"]
+    Sim -->|"Broadcasts WebSocket"| WS["Live Push Alert Toast"]
+    
+    Actions -->|"Seed Demo Data"| Seed["Injects 12 Flagship Products + Batch Orders"]
+    Seed -->|"Populates Charts"| Charts["Area Revenue & Status Donut Charts"]
+    
+    Actions -->|"Reset Data Modal"| ResetModal{"Choose Reset Mode"}
+    ResetModal -->|"Mode 1: Clear Orders"| ClearOrd["Zero-out orders table (Leaves products intact)"]
+    ResetModal -->|"Mode 2: Pristine Restore"| Pristine["Restores 6 default products & 3 starter orders"]
+    
+    ClearOrd --> Sync["Real-time Sync to Dashboard (0 Orders)"]
+    Pristine --> Sync
+

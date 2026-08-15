@@ -117,6 +117,7 @@ export default function AdminDashboardPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
   const [paymentSettingsOpen, setPaymentSettingsOpen] = useState<boolean>(false);
+  const [resetModalOpen, setResetModalOpen] = useState<boolean>(false);
   const [sellerQrisUrl, setSellerQrisUrl] = useState<string>('');
   const [sellerBankInfo, setSellerBankInfo] = useState<string>('BCA: 8831-2941-002 • Mandiri: 120-00-9831-412');
 
@@ -236,15 +237,55 @@ export default function AdminDashboardPage() {
     };
   }, []);
 
-  // Update order status
+  // Update order status & replenish stock if cancelled
   const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {
+      const currentOrder = orders.find((o) => o.id === orderId);
+      const previousStatus = currentOrder?.status;
+
       await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
       );
       if (selectedOrder && selectedOrder.id === orderId) {
         setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
+      }
+
+      // Stock Restitution Logic:
+      // If changing to 'cancelled', restore product inventory
+      if (newStatus === 'cancelled' && previousStatus !== 'cancelled') {
+        const { data: items } = await supabase
+          .from('order_items')
+          .select('product_id, quantity')
+          .eq('order_id', orderId);
+
+        if (items && items.length > 0) {
+          for (const item of items) {
+            const prod = products.find((p) => p.id === item.product_id);
+            if (prod) {
+              const restoredStock = Number(prod.stock || 0) + Number(item.quantity || 0);
+              await supabase.from('products').update({ stock: restoredStock }).eq('id', item.product_id);
+            }
+          }
+          await fetchProducts();
+        }
+      } else if (previousStatus === 'cancelled' && newStatus !== 'cancelled') {
+        // If un-cancelling an order, re-deduct product inventory
+        const { data: items } = await supabase
+          .from('order_items')
+          .select('product_id, quantity')
+          .eq('order_id', orderId);
+
+        if (items && items.length > 0) {
+          for (const item of items) {
+            const prod = products.find((p) => p.id === item.product_id);
+            if (prod) {
+              const reDeductedStock = Math.max(0, Number(prod.stock || 0) - Number(item.quantity || 0));
+              await supabase.from('products').update({ stock: reDeductedStock }).eq('id', item.product_id);
+            }
+          }
+          await fetchProducts();
+        }
       }
     } catch (e) {
       console.error('Failed to update status:', e);
@@ -255,9 +296,10 @@ export default function AdminDashboardPage() {
   const handleVerifyPayment = async (orderId: string, approved: boolean) => {
     try {
       const newStatus: OrderStatus = approved ? 'processing' : 'cancelled';
+      await handleUpdateStatus(orderId, newStatus);
       await supabase
         .from('orders')
-        .update({ status: newStatus, payment_verified: approved })
+        .update({ payment_verified: approved })
         .eq('id', orderId);
 
       setOrders((prev) =>
@@ -275,7 +317,7 @@ export default function AdminDashboardPage() {
       setNewOrderAlert(
         approved
           ? '✅ Payment Proof Verified & Approved! Order moved to Processing.'
-          : '⚠️ Payment Marked Rejected & Cancelled.'
+          : '⚠️ Payment Marked Rejected & Order Cancelled (Stock Restored).'
       );
       setTimeout(() => setNewOrderAlert(null), 5000);
     } catch (e) {
@@ -504,6 +546,147 @@ export default function AdminDashboardPage() {
     document.body.removeChild(link);
   };
 
+  // Reset Actions:
+  // 1. Clear All Orders (Keep Products)
+  const handleClearAllOrders = async () => {
+    setLoading(true);
+    try {
+      await supabase.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      setOrders([]);
+      setResetModalOpen(false);
+      setNewOrderAlert('🧹 All test orders cleared! Ready for live order simulations.');
+      setTimeout(() => setNewOrderAlert(null), 5000);
+    } catch (err) {
+      console.error('Failed to clear orders:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 2. Complete Database Reset (Default Flagship Catalog & Starter Demo Orders)
+  const handleResetPristineDefault = async () => {
+    setLoading(true);
+    try {
+      await supabase.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+      const pristineProducts = [
+        {
+          name: 'Apex Pro RGB Mechanical Keyboard',
+          description: 'Aircraft-grade aluminum frame, OmniPoint adjustable switches, and per-key RGB illumination with USB passthrough.',
+          price: 1850000,
+          stock: 35,
+          image_url: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80',
+          category: 'Electronics',
+        },
+        {
+          name: 'AeroFit Wireless ANC Headphones',
+          description: 'Active Noise Cancellation, 40-hour ultra battery endurance, and hi-res lossless spatial audio.',
+          price: 1250000,
+          stock: 20,
+          image_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80',
+          category: 'Audio',
+        },
+        {
+          name: 'Vanguard Smart GPS Fitness Watch',
+          description: '1.43" AMOLED Retina display, dual-band GPS, 24/7 heart-rate monitoring, and 5ATM water resistance.',
+          price: 850000,
+          stock: 45,
+          image_url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80',
+          category: 'Wearables',
+        },
+        {
+          name: 'NovaCraft Leather Executive Backpack',
+          description: 'Handcrafted genuine leather and waterproof ballistic canvas tailored for up to 16-inch laptops.',
+          price: 650000,
+          stock: 15,
+          image_url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80',
+          category: 'Accessories',
+        },
+        {
+          name: 'Starlight Wireless Precision Mouse',
+          description: 'Ultra-lightweight 58g frame, 26,000 DPI optical sensor, and zero-latency wireless connectivity.',
+          price: 495000,
+          stock: 50,
+          image_url: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=600&q=80',
+          category: 'Peripherals',
+        },
+        {
+          name: 'HydroShield Vacuum Insulated Tumbler 750ml',
+          description: 'Triple-insulated stainless steel keeps cold for 24 hours and hot for 12 hours. BPA-free leakproof lid.',
+          price: 195000,
+          stock: 60,
+          image_url: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80',
+          category: 'Lifestyle',
+        },
+      ];
+
+      const pristineOrders = [
+        {
+          customer_name: 'Budi Pratama',
+          customer_email: 'budi.pratama@example.com',
+          customer_phone: '081298765432',
+          customer_address: 'Cyber 2 Tower Lt. 18, Jl. H.R. Rasuna Said, Jakarta Selatan 12950',
+          total_amount: 1896250,
+          admin_fee: 46250,
+          shipping_courier: 'JNE Express - Reguler (REG)',
+          shipping_cost: 15000,
+          destination_lat: -6.2255,
+          destination_lng: 106.8318,
+          payment_method: 'qris',
+          payment_verified: true,
+          status: 'completed' as OrderStatus,
+        },
+        {
+          customer_name: 'Siti Rahmadani',
+          customer_email: 'siti.rahma@example.com',
+          customer_phone: '085712345678',
+          customer_address: 'Jl. Ir. H. Juanda No. 120, Dago, Bandung, Jawa Barat 40132',
+          total_amount: 1301250,
+          admin_fee: 31250,
+          shipping_courier: 'J&T Express - EZ Standard',
+          shipping_cost: 20000,
+          destination_lat: -6.885,
+          destination_lng: 107.614,
+          payment_method: 'bank_transfer',
+          payment_verified: true,
+          status: 'processing' as OrderStatus,
+        },
+        {
+          customer_name: 'Andi Wijaya',
+          customer_email: 'andi.wijaya@example.com',
+          customer_phone: '081377889900',
+          customer_address: 'Jl. Pemuda No. 45, Embong Kaliasin, Surabaya, Jawa Timur 60271',
+          total_amount: 886250,
+          admin_fee: 21250,
+          shipping_courier: 'Shopee Xpress (SPX) - Standard Eco',
+          shipping_cost: 15000,
+          destination_lat: -7.265,
+          destination_lng: 112.748,
+          payment_method: 'qris',
+          payment_verified: true,
+          status: 'completed' as OrderStatus,
+        },
+      ];
+
+      await supabase.from('products').insert(pristineProducts);
+      await supabase.from('orders').insert(pristineOrders);
+
+      await fetchProducts();
+      await fetchOrders();
+
+      setResetModalOpen(false);
+      setNewOrderAlert('✨ Database restored to clean default state!');
+      setTimeout(() => setNewOrderAlert(null), 5000);
+    } catch (err) {
+      console.error('Failed to reset database:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Product CRUD Handlers
   const handleOpenAddProduct = () => {
     setEditingProduct(null);
@@ -707,7 +890,7 @@ export default function AdminDashboardPage() {
               </button>
             </div>
 
-            {activeTab === 'orders' ? (
+            {activeTab === 'orders' && (
               <>
                 <button
                   onClick={() => setPaymentSettingsOpen(true)}
@@ -744,15 +927,16 @@ export default function AdminDashboardPage() {
                   <Database className="h-3.5 w-3.5" />
                   <span>Seed Demo Data</span>
                 </button>
+
+                <button
+                  onClick={() => setResetModalOpen(true)}
+                  className="flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3.5 py-2 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 transition-all active:scale-95 shadow-sm"
+                  title="Clear test orders or reset database to default"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Reset Data</span>
+                </button>
               </>
-            ) : (
-              <button
-                onClick={handleOpenAddProduct}
-                className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition-all active:scale-95"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Add Product</span>
-              </button>
             )}
 
             <button
@@ -1674,6 +1858,88 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Database Reset & Test Data Clearance Modal */}
+      {resetModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm"
+            onClick={() => setResetModalOpen(false)}
+          />
+          <div className="relative w-full max-w-lg rounded-3xl border border-rose-500/30 bg-slate-900 p-6 sm:p-8 shadow-2xl z-10 space-y-5">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                  <Trash2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Reset Store &amp; Order Data</h3>
+                  <p className="text-xs text-slate-400">Admin Account (<code className="text-cyan-300">admin@novastore.com</code>) will remain intact</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setResetModalOpen(false)}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Choose the reset mode that fits your current demonstration needs:
+            </p>
+
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={handleClearAllOrders}
+                disabled={loading}
+                className="w-full flex items-start gap-3 rounded-2xl border border-white/10 bg-slate-800/60 p-4 text-left hover:bg-slate-800 hover:border-indigo-500/40 transition-all group"
+              >
+                <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                  🧹
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors">
+                    Mode 1: Clear All Test Orders (0 Orders)
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Deletes all transactions and invoices, leaving your store products intact. Perfect for testing a brand new incoming order simulation from scratch!
+                  </p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleResetPristineDefault}
+                disabled={loading}
+                className="w-full flex items-start gap-3 rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4 text-left hover:bg-rose-500/10 hover:border-rose-500/40 transition-all group"
+              >
+                <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                  ✨
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white group-hover:text-rose-300 transition-colors">
+                    Mode 2: Full Restore to Pristine Default
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Restores the default 6 flagship products (Apex Pro, AeroFit, Vanguard, etc.) and 3 starter demonstration orders for immediate chart metrics.
+                  </p>
+                </div>
+              </button>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setResetModalOpen(false)}
+                className="rounded-xl bg-slate-800 px-5 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

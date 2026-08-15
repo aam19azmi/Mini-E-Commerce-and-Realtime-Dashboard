@@ -298,7 +298,18 @@ export default function CheckoutPage() {
 
       await supabase.from('order_items').insert(orderItemsToInsert);
 
-      // 3. Clear cart and redirect
+      // 3. Automatically deduct product stock in catalog
+      for (const item of cart) {
+        try {
+          const currentStock = Number(item.product.stock) || 0;
+          const updatedStock = Math.max(0, currentStock - item.quantity);
+          await supabase.from('products').update({ stock: updatedStock }).eq('id', item.product.id);
+        } catch (stockErr) {
+          console.warn('Could not deduct stock for product', item.product.id, stockErr);
+        }
+      }
+
+      // 4. Clear cart and redirect
       clearCart();
       router.push(
         `/order-success/${orderId}?name=${encodeURIComponent(

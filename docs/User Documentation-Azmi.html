@@ -181,12 +181,20 @@
   <h3>1.2 Core Specifications & Functional Modules</h3>
   <ul>
     <li><strong>Frictionless Guest Checkout (Multi-Product):</strong> Customers can browse items, adjust quantities, add multiple different products to the cart, and complete orders with zero registration or login requirements.</li>
-    <li><strong>Interactive Map Geolocation (OpenStreetMap & GPS):</strong> Integrated map coordinate visualizer with HTML5 GPS auto-location and interactive coordinate pinning.</li>
-    <li><strong>Multi-Courier Logistics Engine:</strong> Real-time distance-based tariff estimation using the Haversine formula across <strong>JNE Express, J&T Express, Shopee Xpress, SiCepat, and Instant Courier</strong>.</li>
+    <li><strong>Interactive Leaflet Map & Pinning:</strong> Full direct click-to-pin, draggable marker, GPS auto-detect, and built-in offline search geocoding across Indonesian and global cities (Jakarta, Bandung, Bali, Medan, New York, Delhi, Shanghai, etc.).</li>
+    <li><strong>Dynamic 4-Tier Logistics Classifier:</strong> Intelligent transit mode classification:
+      <ul>
+        <li><em>Local Intra-City (&lt; 35 km):</em> 🛵 Same-Day Motorbike (GoSend/Grab) + Domestic Couriers.</li>
+        <li><em>Overland Regional (35 – 750 km):</em> 🚚 Ground Fleet Vans &amp; Trucks (JNE REG, J&T EZ, SPX Eco, SiCepat BEST).</li>
+        <li><em>Inter-Island Nationwide (750 – 3,800 km):</em> ✈️ Commercial Air Cargo Planes &amp; Express Maritime RORO Ships.</li>
+        <li><em>International Cross-Border (&gt; 3,800 km):</em> 🌐 Global Air Freight Carriers (<strong>DHL Express Worldwide, FedEx International, Pos Indonesia EMS, UPS Worldwide</strong>).</li>
+      </ul>
+    </li>
     <li><strong>2.5% Administrative Service Fee:</strong> Automatically calculated as <code>Math.round(cartTotal * 0.025)</code> and itemized transparently across checkout, confirmation receipts, and official corporate invoices.</li>
+    <li><strong>Kepabeanan (Bea Cukai) & Tax Compliance:</strong> Itemizes domestic PPN 11% tax, Indonesian 0% Export Duty exemption (*Bebas Bea Keluar*), 0% Zero-Rated VAT Export, and destination country DDU (*Delivered Duty Unpaid*) clearance.</li>
     <li><strong>Zero-Fee Direct Payment Verification:</strong> Direct 0% MDR Instant QRIS and Manual Bank Transfer (BCA, Mandiri) with payment receipt screenshot upload and 1-click admin approval/rejection.</li>
     <li><strong>Real-time Operations Dashboard:</strong> Real-time WebSocket subscriptions on PostgreSQL changes, visual KPI analytics graphs (Recharts), inventory CRUD, and 1-click CSV/Excel export.</li>
-    <li><strong>Official Corporate Tax Invoices:</strong> Dedicated <code>/invoice/[id]</code> route formatted with DPP (Nilai Kena Pajak), PPN 11%, courier delivery line item, administrative fees, and verified scannable QR verification code.</li>
+    <li><strong>Official Corporate Tax Invoices:</strong> Dedicated <code>/invoice/[id]</code> route formatted with DPP (Nilai Kena Pajak), PPN 11% / PPN Ekspor 0%, courier delivery line item, administrative fees, and verified scannable QR verification code.</li>
   </ul>
 
   <h3>1.3 Mathematical & Fee Formulations</h3>
@@ -195,8 +203,10 @@
     • Shipping Tariff = Base Cost + (Distance in KM × Tariff per KM)<br>
     • Admin Fee (Biaya Layanan 2.5%) = Round(Product Subtotal × 0.025)<br>
     • Grand Total = Product Subtotal + Shipping Tariff + Admin Fee<br>
-    • Tax Base (DPP) = Round(Product Subtotal / 1.11)<br>
-    • PPN 11% = Product Subtotal - DPP
+    • Domestic Tax Base (DPP) = Round(Product Subtotal / 1.11)<br>
+    • Domestic PPN 11% = Product Subtotal - DPP<br>
+    • International PPN Ekspor = Rp 0 (0% Zero-Rated Export)<br>
+    • Indonesian Bea Keluar = Rp 0 (0% Free Export Tariff)
   </div>
 
   <!-- 2. ERD -->
@@ -451,6 +461,8 @@
     <li><strong>Session 6 (Logistics & 2.5% Admin Fee Engine):</strong> Built <code>MapLocationPicker</code> with GPS and OpenStreetMap, multi-courier matrix (JNE, J&T, SPX, SiCepat, Instant), 2.5% admin fee arithmetic, and payment proof receipt screenshot uploader.</li>
     <li><strong>Session 7 (Cross-Browser Polish & Seeder):</strong> Added cross-browser styling (Chrome, Edge, Safari, Firefox), sleek dark scrollbars, backdrop blur fallbacks, and 1-click interactive database seeder.</li>
     <li><strong>Session 8 (Single-Merchant Architecture & Final Submission):</strong> Streamlined architecture to pure single-merchant operations, removed registration confusion, added QRIS screenshot proof verification, created database reset script, and compiled Word/PDF documentation.</li>
+    <li><strong>Session 9 (Leaflet Map, Global Geocoding & Customs Compliance):</strong> Integrated real interactive Leaflet map with direct click-to-pin, built offline Indonesian & global cities search index, created 4-tier dynamic logistics routing (Motorbike, Overland Express, Air Cargo, DHL/FedEx International), and implemented Indonesian Bea Cukai & WTO customs compliance (0% Export Tariff, 0% VAT Export Zero-Rated, DDU Destination Clearance).</li>
+    <li><strong>Session 10 (Inventory Stock Automation, Cancellation Restitution & Database Reset):</strong> Implemented automated catalog inventory stock decrement upon order completion, automated stock replenishment upon order cancellation, de-duplicated store catalog action buttons, added 1-click Database Reset modal in the Admin Dashboard, and established mandatory planning and docs synchronization agent rules.</li>
   </ul>
 
   <!-- 5. SCREENSHOTS -->

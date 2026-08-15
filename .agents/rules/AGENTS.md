@@ -49,16 +49,20 @@ This project is a technical test to build a **Mini E-Commerce and Realtime Dashb
 
 ## 🧠 Developer / Agent Guidelines
 1. **Language Rule**: ALL markdown files (documentation, rules, PRD, ERD, etc.) MUST be written in **English**.
-2. **UI/UX & Modals (STRICT)**: Focus on a premium, responsive, and dynamic UI/UX. **Never use native browser dialogs like `window.confirm()`, `alert()`, or `prompt()`.** All confirmations and alerts must be custom-built UI modals/toasts.
-3. **Token Efficiency**: Provide concise, highly accurate code. Avoid unnecessary conversational filler. Minimize token usage without sacrificing the completeness of the code or documentation.
-4. **Documentation Generation**: Be prepared to generate comprehensive submission documents within the 2-day deadline:
+2. **Mandatory Planning & Implementation Plan (`implementation_plan.md`)**: Before writing code or performing any modifications, you MUST create or renew `implementation_plan.md` outlining objectives, proposed changes, architectural rationale, and verification steps.
+3. **Mandatory Task Breakdown & Tracking (`task.md`)**: Whenever working or doing anything regarding an implementation plan, you MUST create or renew `task.md` with granular task checklists, clear statuses (`[x]` completed, `[/]` in-progress, `[ ]` pending), and action items based on what has been completed or planned.
+4. **Mandatory Walkthrough (`walkthrough.md`)**: Upon completing any work or task, you MUST create or renew `walkthrough.md` detailing the exact modifications made, validation outcomes, testing evidence, and next steps.
+5. **Mandatory Docs Directory Synchronization (`docs/`)**: Whenever ANY change, update, bugfix, or feature addition is introduced, you MUST immediately update and synchronize all documentation files inside the `docs/` directory (`docs/PRD_AND_ERD.md`, `docs/SYSTEM_FLOWCHART.md`, `docs/AI_PROMPT_LOG.md`, `docs/User Documentation-Azmi.html`, and `README.md`) so that documentation always reflects the latest state of the application.
+6. **UI/UX & Modals (STRICT)**: Focus on a premium, responsive, and dynamic UI/UX. **Never use native browser dialogs like `window.confirm()`, `alert()`, or `prompt()`.** All confirmations and alerts must be custom-built UI modals/toasts.
+7. **Token Efficiency**: Provide concise, highly accurate code. Avoid unnecessary conversational filler. Minimize token usage without sacrificing the completeness of the code or documentation.
+8. **Documentation Generation**: Be prepared to generate comprehensive submission documents within the 2-day deadline:
    - PRD (Product Requirement Document).
    - ERD (Entity Relationship Diagram) using Mermaid.js.
    - Flowcharts of the system using Mermaid.js.
    - LaTeX scripts for converting documentation to Word/PDF.
    - Setup instructions for capturing screenshots (UI only).
-5. **AI Tool Tracking**: Actively track and log all major prompts and steps taken. Ensure this is exportable for the "Log Prompting AI" document submission.
-6. **Proactive Planning**: Before major implementations, formulate a clear plan, verify Supabase schema requirements, and ensure Next.js App Router best practices are followed.
+9. **AI Tool Tracking**: Actively track and log all major prompts and steps taken in `docs/AI_PROMPT_LOG.md`. Ensure this is exportable for the "Log Prompting AI" document submission.
+10. **Proactive Planning & Verification**: Before major implementations, formulate a clear plan, verify Supabase schema requirements, ensure Next.js App Router best practices are followed, and verify with `npm run build` with 0 errors.
 
 ## 📦 Submission & Interview Protocol
 - **Deadline**: Maximum 2 days (16-08-2026) from project receipt (14-08-2026).

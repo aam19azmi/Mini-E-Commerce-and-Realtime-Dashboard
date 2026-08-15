@@ -87,3 +87,28 @@ This document serves as the official AI Prompting Log for the **NovaStore Mini E
   4. Created `supabase/reset_database.sql` to truncate and restore the database to clean default state.
   5. Updated `README.md`, `docs/PRD_AND_ERD.md`, `docs/SYSTEM_FLOWCHART.md`, and `docs/DOCUMENTATION.tex`.
   6. Verified zero build or TypeScript errors with `npm run build`.
+
+---
+
+## 📅 Session 9: Interactive Leaflet Map, Global Geocoding, Multi-Tier Couriers & Customs (Bea Cukai) Engine
+- **User Prompt:** "Can I pin my location myself? What is different between simulate order and seed demo data? Are shipping services always can service to delivery to other country? In order summary when customer checkout we forget to add show nominal Tax (11%)... How to determine approach based on customer location (cargo, ship, plane, international agent)? Why search position failed / refreshed page? Why GPS pin differed? Should delivery agents change for international?"
+- **Key Engineering Actions:**
+  1. Integrated real interactive **Leaflet Map** with direct click-to-pin, draggable markers, and automatic reverse-geocoding.
+  2. Built high-accuracy **Indonesian Locations Index** (Jakarta, Bandung, Dago, Surabaya, Bali, Medan, Makassar, IKN, etc.) + **Global World Cities** (New York, Delhi, Shanghai, Tokyo, London, Sydney).
+  3. Fixed nested form bug in `MapLocationPicker.tsx` to prevent accidental page refreshes on search input.
+  4. Implemented dynamic **4-Tier Logistics Classifier** (Local Motorbike &lt; 35km, Overland Express 35-750km, Inter-Island Air/Sea 750-3800km, International Air Freight &gt; 3800km).
+  5. Added dynamic courier fleet switching: Domestic (JNE, J&T, SPX, SiCepat, Instant Bike) vs. International (DHL Express, FedEx, Pos Indonesia EMS, UPS Worldwide).
+  6. Added Indonesian **Bea Cukai & Tax Law compliance** (0% Export Duty, 0% VAT Export Zero-Rated, Destination DDU customs notice, PPN 11% itemization) across checkout summary and official invoices.
+
+---
+
+## 📅 Session 10: Inventory Stock Automation, Cancellation Restitution, 1-Click Reset & Strict Agent Rules
+- **User Prompt:** "How to manage the store catalog, because when I ordered keyboard for example. Stock for that keyboard hasn't decreased. And when I change status I can see receipt attached. Before I change status I still can see it. And if status change cancelled is stock comeback to before or still decreased? And in store catalog there are two button for Add product. Should we use both or one and delete other? And if I want to reset all data like delete all data except account admin@novastore.com with password admin12345 what should I do? Now on AGENTS.md add rule that every want to work or do something must to create or renew implementation_plan.md and result always create or renew walkthrough.md and always renew all inside on docs directory."
+- **Key Engineering Actions:**
+  1. Automated **Inventory Stock Decrement** in `src/app/checkout/page.tsx` on order placement (`stock = max(0, stock - quantity)`).
+  2. Implemented **Automatic Stock Restitution** in `src/app/admin/dashboard/page.tsx` upon order cancellation (`stock = stock + quantity`) and re-deduction on reactivation.
+  3. Removed duplicate "Add Product" button in top navbar, standardizing on the primary catalog header button.
+  4. Built **1-Click Database Reset Modal** in Admin Dashboard offering two modes (Clear Test Orders vs. Full Pristine Restore) with guaranteed isolation of `admin@novastore.com`.
+  5. Updated `.agents/rules/AGENTS.md` with strict mandatory protocol requiring `implementation_plan.md`, `walkthrough.md`, and complete synchronization across the `docs/` directory.
+
+

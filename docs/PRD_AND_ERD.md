@@ -23,9 +23,11 @@
    - Real-time live orders monitor powered by Supabase PostgreSQL WebSockets.
    - Interactive financial analytics charts (Revenue trends, Order status distribution, AOV).
    - Payment proof inspection center with full-resolution zoom lightbox and 1-click Approve / Reject.
+   - Automated inventory stock management (automatic decrement on purchase, automatic restitution on cancellation).
    - Full product catalog inventory CRUD (Create, Read, Update, Delete with modern confirmation modal).
    - 1-click CSV / Excel export for accounting reports.
    - Live order simulation tool for instant real-time demonstration.
+   - 1-click Database Reset modal with Clear Test Orders (0 Orders) and Full Pristine Restore modes.
 
 ---
 
@@ -38,7 +40,16 @@ $$\text{Admin Fee (Biaya Layanan 2.5\%)} = \text{Round}(\text{Product Subtotal} 
 $$\text{Grand Total} = \text{Product Subtotal} + \text{Shipping Tariff} + \text{Admin Fee}$$
 
 $$\text{DPP (Dasar Pengenaan Pajak)} = \text{Round}\left(\frac{\text{Product Subtotal}}{1.11}\right)$$
-$$\text{PPN 11\%} = \text{Product Subtotal} - \text{DPP}$$
+$$\text{PPN 11\% (Domestic)} = \text{Product Subtotal} - \text{DPP}$$
+$$\text{PPN Ekspor (International)} = \text{Rp 0 (0\% Zero-Rated Export Tax Incentive)}$$
+$$\text{Bea Keluar (Export Tariff ID)} = \text{Rp 0 (0\% Free Export Duty - Ditjen Bea Cukai)}$$
+$$\text{Destination Customs (Bea Cukai Impor)} = \text{DDU (Delivered Duty Unpaid / De Minimis Threshold)}$$
+
+### 3.2 Intelligent 4-Tier Logistics Classification Matrix
+1. **Tier 1: Local Intra-City (< 35 km):** 🛵 Instant Same-Day Motorbike (GoSend/Grab) + Domestic Couriers.
+2. **Tier 2: Regional Overland (35 – 750 km):** 🚚 Ground Fleet Vans & Cargo Trucks (JNE REG, J&T EZ, SPX Eco, SiCepat BEST).
+3. **Tier 3: Inter-Island Nationwide (750 – 3.800 km):** ✈️ Commercial Air Cargo Planes & Maritime RORO Ships.
+4. **Tier 4: International Cross-Border (> 3.800 km):** 🌐 Global Air Freight Carriers (**DHL Express, FedEx International, Pos Indonesia EMS, UPS Worldwide**).
 
 ---
 
