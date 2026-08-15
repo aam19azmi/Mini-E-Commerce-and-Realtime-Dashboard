@@ -140,6 +140,7 @@ export default function AdminDashboardPage() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
+      const isCleared = typeof window !== 'undefined' && localStorage.getItem('novastore_orders_cleared') === 'true';
       const { data, error } = await supabase
         .from('orders')
         .select('*')
@@ -147,13 +148,20 @@ export default function AdminDashboardPage() {
 
       if (error) {
         console.error('Supabase query error on orders:', error.message);
-        setOrders(SEED_ORDERS);
+        setOrders(isCleared ? [] : SEED_ORDERS);
       } else if (data) {
-        setOrders(data as Order[]);
+        if (data.length === 0 && isCleared) {
+          setOrders([]);
+        } else if (data.length === 0 && !isCleared) {
+          setOrders([]);
+        } else {
+          setOrders(data as Order[]);
+        }
       }
     } catch (e) {
       console.error('Error fetching orders:', e);
-      setOrders(SEED_ORDERS);
+      const isCleared = typeof window !== 'undefined' && localStorage.getItem('novastore_orders_cleared') === 'true';
+      setOrders(isCleared ? [] : SEED_ORDERS);
     } finally {
       setLoading(false);
     }
@@ -221,7 +229,26 @@ export default function AdminDashboardPage() {
             setTimeout(() => setNewOrderAlert(null), 6000);
           } else if (payload.eventType === 'UPDATE') {
             const updated = payload.new as Order;
-            setOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+            setOrders((prev) =>
+              prev.map((o) =>
+                o.id === updated.id
+                  ? {
+                      ...o,
+                      ...updated,
+                      payment_proof_url: updated.payment_proof_url || o.payment_proof_url,
+                    }
+                  : o
+              )
+            );
+            setSelectedOrder((prev) =>
+              prev && prev.id === updated.id
+                ? {
+                    ...prev,
+                    ...updated,
+                    payment_proof_url: updated.payment_proof_url || prev.payment_proof_url,
+                  }
+                : prev
+            );
           } else if (payload.eventType === 'DELETE') {
             const deleted = payload.old as Order;
             setOrders((prev) => prev.filter((o) => o.id !== deleted.id));
@@ -361,6 +388,7 @@ export default function AdminDashboardPage() {
         .single();
 
       if (!error && data) {
+        if (typeof window !== 'undefined') localStorage.removeItem('novastore_orders_cleared');
         setOrders((prev) => [data as Order, ...prev]);
         setNewOrderAlert(`🎉 Live order received for your store: ${name} (${formatPrice(amount)})`);
         setTimeout(() => setNewOrderAlert(null), 5000);
@@ -374,6 +402,7 @@ export default function AdminDashboardPage() {
   const handleSeedDatabase = async () => {
     setLoading(true);
     try {
+      if (typeof window !== 'undefined') localStorage.removeItem('novastore_orders_cleared');
       const sampleProducts = [
         {
           name: 'Apex Pro RGB Mechanical Keyboard',
@@ -551,8 +580,16 @@ export default function AdminDashboardPage() {
   const handleClearAllOrders = async () => {
     setLoading(true);
     try {
-      await supabase.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('novastore_orders_cleared', 'true');
+      }
+      try {
+        await supabase.from('order_items').delete().gte('created_at', '1970-01-01T00:00:00Z');
+      } catch (e) {}
+      try {
+        await supabase.from('orders').delete().gte('created_at', '1970-01-01T00:00:00Z');
+      } catch (e) {}
+
       setOrders([]);
       setResetModalOpen(false);
       setNewOrderAlert('🧹 All test orders cleared! Ready for live order simulations.');
@@ -568,9 +605,14 @@ export default function AdminDashboardPage() {
   const handleResetPristineDefault = async () => {
     setLoading(true);
     try {
-      await supabase.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('novastore_orders_cleared');
+      }
+      try {
+        await supabase.from('order_items').delete().gte('created_at', '1970-01-01T00:00:00Z');
+        await supabase.from('orders').delete().gte('created_at', '1970-01-01T00:00:00Z');
+        await supabase.from('products').delete().gte('created_at', '1970-01-01T00:00:00Z');
+      } catch (e) {}
 
       const pristineProducts = [
         {

@@ -117,6 +117,13 @@ TO public
 USING (true)
 WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Admins can delete orders" ON public.orders;
+DROP POLICY IF EXISTS "Allow delete orders" ON public.orders;
+CREATE POLICY "Allow delete orders" 
+ON public.orders FOR DELETE 
+TO public 
+USING (true);
+
 -- 9. RLS Policies: Order Items
 DROP POLICY IF EXISTS "Guests can create order items" ON public.order_items;
 CREATE POLICY "Guests can create order items" 
@@ -128,6 +135,13 @@ DROP POLICY IF EXISTS "Admins can view all order items" ON public.order_items;
 DROP POLICY IF EXISTS "Allow view all order items" ON public.order_items;
 CREATE POLICY "Allow view all order items" 
 ON public.order_items FOR SELECT 
+TO public 
+USING (true);
+
+DROP POLICY IF EXISTS "Admins can delete order items" ON public.order_items;
+DROP POLICY IF EXISTS "Allow delete order items" ON public.order_items;
+CREATE POLICY "Allow delete order items" 
+ON public.order_items FOR DELETE 
 TO public 
 USING (true);
 
