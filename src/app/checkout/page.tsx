@@ -434,36 +434,93 @@ export default function CheckoutPage() {
 
               {/* SECTION 3: Integrated Courier Service Selector */}
               <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 sm:p-8 backdrop-blur-md">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-white/10 pb-3">
                   <h2 className="flex items-center gap-2.5 text-lg font-bold text-white">
                     <span className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-500/20 text-xs text-indigo-400 font-extrabold">
                       3
                     </span>
                     Select Courier & Shipping Service
                   </h2>
-                  <span className="text-xs font-bold text-cyan-400">{distanceKm} km from Hub</span>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 text-[11px] font-bold text-cyan-300">
+                      {distanceKm} km from Central Hub
+                    </span>
+                  </div>
                 </div>
 
-                <div className="mt-6 space-y-3">
+                {/* Logistics Transit Mode Indicator */}
+                <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/60 p-3.5 flex items-center gap-3 text-xs">
+                  {distanceKm <= 35 ? (
+                    <>
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        🛵
+                      </div>
+                      <div>
+                        <p className="font-bold text-emerald-300">Intra-City Local Zone (&lt; 35 km)</p>
+                        <p className="text-[11px] text-slate-400">Direct courier bike &amp; same-day delivery available.</p>
+                      </div>
+                    </>
+                  ) : distanceKm <= 750 ? (
+                    <>
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                        🚚
+                      </div>
+                      <div>
+                        <p className="font-bold text-indigo-300">Overland Regional Express (Java &amp; Bali)</p>
+                        <p className="text-[11px] text-slate-400">Handled via dedicated ground fleet vans &amp; cargo trucks.</p>
+                      </div>
+                    </>
+                  ) : distanceKm <= 3800 ? (
+                    <>
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                        ✈️
+                      </div>
+                      <div>
+                        <p className="font-bold text-cyan-300">Inter-Island Air Cargo &amp; Sea Freight</p>
+                        <p className="text-[11px] text-slate-400">Dispatched via commercial air cargo planes and express maritime logistics.</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                        🌐
+                      </div>
+                      <div>
+                        <p className="font-bold text-amber-300">International / Cross-Border Zone</p>
+                        <p className="text-[11px] text-slate-400">Handled via international air freight with customs duty clearance.</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="mt-4 space-y-3">
                   {COURIER_OPTIONS.map((courier) => {
+                    const isInstantBike = courier.id === 'instant';
+                    const isBikeDisabled = isInstantBike && distanceKm > 35;
                     const cost = Math.round(courier.baseCost + distanceKm * courier.perKm);
                     const isSelected = selectedCourierId === courier.id;
+
                     return (
                       <label
                         key={courier.id}
-                        onClick={() => setSelectedCourierId(courier.id)}
-                        className={`flex cursor-pointer items-center justify-between rounded-2xl border p-4 transition-all ${
-                          isSelected
-                            ? 'border-indigo-500 bg-indigo-600/15 shadow-lg shadow-indigo-500/10'
-                            : 'border-white/10 bg-slate-800/40 hover:bg-slate-800/80'
+                        onClick={() => {
+                          if (!isBikeDisabled) setSelectedCourierId(courier.id);
+                        }}
+                        className={`flex items-center justify-between rounded-2xl border p-4 transition-all ${
+                          isBikeDisabled
+                            ? 'opacity-40 cursor-not-allowed border-white/5 bg-slate-900/40'
+                            : isSelected
+                            ? 'cursor-pointer border-indigo-500 bg-indigo-600/15 shadow-lg shadow-indigo-500/10'
+                            : 'cursor-pointer border-white/10 bg-slate-800/40 hover:bg-slate-800/80'
                         }`}
                       >
                         <div className="flex items-center gap-3.5">
                           <input
                             type="radio"
                             name="courierOption"
+                            disabled={isBikeDisabled}
                             checked={isSelected}
-                            onChange={() => setSelectedCourierId(courier.id)}
+                            onChange={() => !isBikeDisabled && setSelectedCourierId(courier.id)}
                             className="text-indigo-600 focus:ring-indigo-500"
                           />
                           <div>
@@ -476,6 +533,9 @@ export default function CheckoutPage() {
                             <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
                               <Clock className="h-3 w-3" />
                               <span>Est. Arrival: {courier.eta}</span>
+                              {isBikeDisabled && (
+                                <span className="text-rose-400 font-semibold">(Exceeds 35km radius for motorbikes)</span>
+                              )}
                             </div>
                           </div>
                         </div>
