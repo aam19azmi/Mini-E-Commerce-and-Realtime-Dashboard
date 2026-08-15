@@ -19,27 +19,33 @@ export default function AdminLoginPage() {
     setError(null);
 
     try {
+      // 1. Attempt real Supabase Auth
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (authError) {
-        // If Supabase Auth returns an error (e.g. unconfirmed email or demo input), allow demo credentials
-        if (email.includes('admin') || password.length >= 6) {
-          sessionStorage.setItem('admin_demo_auth', 'true');
-          router.push('/admin/dashboard');
-          return;
-        }
-        throw new Error(authError.message);
+      if (!authError && data.session) {
+        sessionStorage.setItem('admin_demo_auth', 'true');
+        sessionStorage.setItem('admin_email', data.session.user.email || email);
+        router.push('/admin/dashboard');
+        return;
       }
 
-      if (data.session) {
+      // 2. Verified Hardcoded Demo Admin Credentials for technical review
+      if (email === 'admin@novastore.com' && password === 'admin12345') {
         sessionStorage.setItem('admin_demo_auth', 'true');
+        sessionStorage.setItem('admin_email', 'admin@novastore.com');
         router.push('/admin/dashboard');
+        return;
       }
+
+      // 3. Strictly Reject unauthorized or random credentials
+      throw new Error(
+        authError?.message || 'Invalid email or password. Access denied. Please use the designated admin credentials (admin@novastore.com / admin12345) or 1-Click Demo Access.'
+      );
     } catch (err: any) {
-      setError(err.message || 'Authentication error. You can also use Instant Demo Access below.');
+      setError(err.message || 'Authentication failed. Access denied.');
     } finally {
       setLoading(false);
     }
@@ -47,6 +53,7 @@ export default function AdminLoginPage() {
 
   const handleDemoAccess = () => {
     sessionStorage.setItem('admin_demo_auth', 'true');
+    sessionStorage.setItem('admin_email', 'admin@novastore.com');
     router.push('/admin/dashboard');
   };
 

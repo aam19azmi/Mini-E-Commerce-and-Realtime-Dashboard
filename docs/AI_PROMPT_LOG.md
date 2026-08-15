@@ -1,71 +1,89 @@
-# AI Prompt & Development Log
+# AI Prompt & Engineering Development Log
 
-This document records the prompts, architectural decisions, and AI-assisted workflows used during the development of the **Mini E-Commerce and Realtime Dashboard**.
+This document serves as the official AI Prompting Log for the **NovaStore Mini E-Commerce and Realtime Dashboard** technical test submission, detailing all user prompts, design decisions, architectural iterations, and agent actions.
 
 ---
 
-## Session 1: Project Scoping, Rules & Architecture Planning
-- **Date & Time:** August 14, 2026
+## 📅 Session 1: Project Initiation, Rules Definition & Architectural Planning
+- **Date:** August 14, 2026
 - **User Prompt:** Provided technical test instructions & specifications (Guest Checkout, Multi-Product support, Real-time Admin Dashboard, Next.js + Supabase + Vercel deployment, English documentation requirement, Free tier constraints).
-- **AI Actions Taken:**
-  1. Formulated `.agents/rules/AGENTS.md` specifying architecture constraints, Supabase free-tier limits, and core guidelines.
+- **Key Engineering Actions:**
+  1. Formulated `.agents/rules/AGENTS.md` specifying architecture constraints, Supabase free-tier limits, token minimization strategies, and strict modal guidelines (ban on `window.confirm()`).
   2. Created `implementation_plan.md` featuring preliminary PRD, ERD, and flowcharts.
-  3. Cleaned and structured project root workspace.
-  4. Clarified questions on package managers (`npm`), Supabase setup sequence, domain management, and multi-repo Vercel support.
+  3. Structured the project directory and verified tooling prerequisites.
 
 ---
 
-## Session 2: Database Schema & Submission Documentation Setup
+## 📅 Session 2: Database Schema & Initial Documentation Scaffolding
 - **User Prompt:** "Okay thanks then I'll create subdomain for the last. We are ready to start"
-- **AI Actions Taken:**
-  1. Bootstrapped Next.js with App Router, TypeScript, and Tailwind CSS.
+- **Key Engineering Actions:**
+  1. Bootstrapped Next.js App Router with TypeScript and Tailwind CSS.
   2. Generated `supabase/schema.sql` encompassing:
      - `products`, `orders`, and `order_items` tables.
      - Row Level Security (RLS) policies for guest buyers and authenticated admins.
      - Real-time PostgreSQL publication (`supabase_realtime`).
      - Realistic seed product dataset in Indonesian Rupiah (IDR).
-  3. Created `docs/PRD_AND_ERD.md` containing detailed requirements and Mermaid ERD.
-  4. Created `docs/SYSTEM_FLOWCHART.md` detailing system workflows and sequence diagrams.
+  3. Created initial `docs/PRD_AND_ERD.md` and `docs/SYSTEM_FLOWCHART.md`.
 
 ---
 
-## Session 3: Full-Stack Implementation
-- **AI Actions Taken:**
-  1. Configured Supabase client in `src/lib/supabase.ts` supporting both `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-  2. Installed dependencies: `@supabase/supabase-js`, `lucide-react`, `recharts`, `canvas-confetti`, `clsx`, `tailwind-merge`.
-  3. Developed `CartContext.tsx` with persistent `localStorage` and multi-product cart management.
-  4. Implemented `Navbar.tsx` and `CartDrawer.tsx` with live badge count and slide-over cart drawer.
-  5. Built Storefront (`src/app/page.tsx`) with product filtering, category tabs, and responsive cards (`ProductCard.tsx`).
-  6. Built Guest Checkout (`src/app/checkout/page.tsx`) inserting orders and order line items directly to Supabase.
-  7. Built Order Confirmation (`src/app/order-success/[id]/page.tsx`) with celebratory confetti and receipt details.
-  8. Built Admin Login (`src/app/admin/login/page.tsx`) with Supabase Auth and one-click demo access for reviewers.
-  9. Built Real-time Admin Dashboard (`src/app/admin/dashboard/page.tsx`) with Supabase WebSocket subscriptions, KPI cards, visual Recharts (Area and Pie), live orders table, instant status updater, and order simulation trigger.
+## 📅 Session 3: Core Full-Stack Application Implementation
+- **Key Engineering Actions:**
+  1. Configured Supabase client in `src/lib/supabase.ts`.
+  2. Built `CartContext.tsx` with persistent multi-product cart state.
+  3. Built Storefront (`src/app/page.tsx`) with product filtering and responsive cards.
+  4. Built Guest Checkout (`src/app/checkout/page.tsx`) with multi-product order creation.
+  5. Built Order Confirmation (`src/app/order-success/[id]/page.tsx`) with confetti celebrations.
+  6. Built Admin Login (`src/app/admin/login/page.tsx`) with Supabase Auth and Instant Demo Access.
+  7. Built Real-time Admin Dashboard (`src/app/admin/dashboard/page.tsx`) with Supabase WebSocket subscriptions, KPI cards, visual Recharts (Area and Pie), live orders table, and instant status updater.
 
 ---
 
-## Session 4: Verification, RLS Optimization & Database Sync
-- **AI Actions Taken:**
-  1. Saved high-resolution screenshots to `docs/screenshots/` and documented in `docs/SCREENSHOTS.md`.
+## 📅 Session 4: Verification, RLS Optimization & Database Sync
+- **Key Engineering Actions:**
+  1. Captured and archived UI screenshots in `docs/screenshots/` and documented in `docs/SCREENSHOTS.md`.
   2. Resolved RLS `SELECT` policy constraints for the `orders` table to allow persistent reads across page refreshes.
-  3. Executed full idempotent database migration in Supabase SQL editor (`products`, `orders`, `order_items`, RLS, Realtime publication).
-  4. Verified full end-to-end flow: Guest checkout order creation -> WebSocket real-time broadcast -> Permanent database persistence across page reloads.
+  3. Executed full idempotent database migration in Supabase SQL editor.
+  4. Verified full end-to-end flow: Guest checkout order creation -> WebSocket real-time broadcast -> Permanent database persistence.
 
 ---
 
-## Session 5: Advanced Features & Invoice Architecture Enhancement
-- **AI Actions Taken:**
-  1. **Modern Delete Confirmation Dialog**: Replaced `window.confirm()` with custom glassmorphism modal with warning indicators and confirmation buttons.
-  2. **Dedicated Clean Invoice Page (`/invoice/[id]`)**: Standalone corporate tax invoice route with scannable QR verification code and exact Indonesian tax arithmetic (`DPP + PPN 11% = Grand Total`).
-  3. **Export Orders to CSV/Excel**: One-click `.csv` generation in the Admin Dashboard.
-  4. **Product Catalog CRUD**: Full Add/Edit/Delete product capabilities directly synced with Supabase.
-  5. **Protected Admin Route Guard & Seller Registration**: Added client-side session guard on `/admin/dashboard` redirecting unauthorized visits to `/admin/login`, added Seller Sign Up / Registration tab, and added a Logout/Sign Out action.
+## 📅 Session 5: Modern UI/UX Dialogs & Commercial Tax Invoice Engine
+- **User Prompt:** Requested replacement of native browser `confirm()` dialogs with custom UI, and fixing invoice rendering to a dedicated, professional tax invoice document.
+- **Key Engineering Actions:**
+  1. Replaced all `window.confirm()` calls with a custom glassmorphism modal with warning indicators and confirmation buttons.
+  2. Created dedicated `/invoice/[id]` route with corporate styling (`PT NOVA DIGITAL NIAGA INDONESIA`), DPP + PPN 11% tax calculation, scannable QR verification code, and print-optimized CSS.
+  3. Added 1-click CSV export and full product catalog CRUD.
 
 ---
 
-## Session 6: Multi-Seller & Multi-Vendor Marketplace Isolation
-- **User Prompt:** "The account I registered still display the same product and stock listings, as well as the same live transactions and orders. In my view, these should differ, as different admins or seller might be selling distinct products and stock..."
-- **AI Actions Taken:**
-  1. **Seller-Specific Product Isolation**: When a seller registers and adds products, those items are strictly linked to `seller_email: currentAdminEmail`. Each seller only sees, modifies, and manages their own inventory.
-  2. **Seller-Specific Orders & Analytics**: Real-time sales transactions, KPI totals (Revenue, Orders, Completed, Pending), Area chart streams, and Status donut graphs are computed strictly for the active seller's store.
-  3. **Storefront Merchant Attribution**: All marketplace products appear on the public storefront with an active `🏬 Merchant: [seller]` badge.
-  4. **Merchant & Cashier Stamping on Invoices**: The Tax Invoice features a 3-column layout displaying the **Official Seller / Merchant**, **Buyer & Destination**, and the **Issuing Cashier Officer**.
+## 📅 Session 6: Advanced Logistics, Map Pinpoint & 2.5% Admin Fee Engine
+- **User Prompt:** "1. Administrative Fee: Please add an administrative fee of 2,5% from buyer payed that is automatically calculated and displayed on the invoice. 2. Integrated shipping cost calculation: we need to integrate shipment services (such as JNT, JNE, SPX, etc) to automatically calculate shipping cost. Both sellers and customers should be able to either type their address or pin their exact location on a map. Payment method: instant qris: zero transaction fees, bank transfer manual proof verification, COD."
+- **Key Engineering Actions:**
+  1. Built `src/components/MapLocationPicker.tsx` with OpenStreetMap, Leaflet visualizer, GPS auto-detect, and Haversine distance calculator.
+  2. Implemented multi-courier tariff calculation matrix (JNE, J&T, SPX, SiCepat, Instant).
+  3. Added automatic 2.5% administrative service fee calculation (`Math.round(cartTotal * 0.025)`).
+  4. Built payment receipt screenshot uploader with base64 conversion and full-resolution lightbox viewer in the Admin Dashboard.
+  5. Added payment verification actions (`Approve Payment` / `Reject`) in the Admin Dashboard.
+
+---
+
+## 📅 Session 7: Cash Flow Architecture Consultation & Cross-Browser Polish
+- **User Prompt:** "So how does the 2.5% administrative fee get deposited into my bank account or e wallet? Which model is free? ... Also improve this application for UI/UX like can display perfect at chrome, microsoft edge, and other browsers. And make seeder for this application."
+- **Key Engineering Actions:**
+  1. Consulted on the 3 industry-standard cash flow models (Direct-to-Seller Billing, Escrow Gateway, and Deposit Deduction).
+  2. Enhanced `src/app/globals.css` with sleek dark scrollbars, backdrop-blur webkit fallbacks, and text antialiasing for Chrome, Edge, Safari, and Firefox.
+  3. Created comprehensive PostgreSQL seeder `supabase/seed.sql`.
+  4. Added interactive 1-click "Seed Demo Data" action in the Admin Dashboard.
+
+---
+
+## 📅 Session 8: Single-Merchant Architecture Finalization & Submission Package Preparation
+- **User Prompt:** "Okay then, let's dismantle it and set it up as a single merchant. ... Why is there still a seller registration option? Can you delete all data and repeat again to default? Prepare submission package and update README.md."
+- **Key Engineering Actions:**
+  1. Streamlined the Admin Dashboard into a pure, unified **NovaStore Central Operations Command Center**.
+  2. Removed seller registration tabs from `src/app/admin/login/page.tsx` for a clean Admin Portal experience with instant demo access.
+  3. Added QRIS screenshot proof upload in `src/app/checkout/page.tsx` for consistent manual verification.
+  4. Created `supabase/reset_database.sql` to truncate and restore the database to clean default state.
+  5. Updated `README.md`, `docs/PRD_AND_ERD.md`, `docs/SYSTEM_FLOWCHART.md`, and `docs/DOCUMENTATION.tex`.
+  6. Verified zero build or TypeScript errors with `npm run build`.

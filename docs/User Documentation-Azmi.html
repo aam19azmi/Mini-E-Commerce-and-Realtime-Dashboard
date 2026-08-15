@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Documentation - Azmi | NovaStore</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      color: #0f172a;
+      background-color: #ffffff;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 30px;
+    }
+    h1, h2, h3, h4 {
+      color: #1e1b4b;
+      font-weight: 700;
+    }
+    h1 {
+      font-size: 24pt;
+      text-align: center;
+      margin-bottom: 6px;
+      border-bottom: 3px solid #4f46e5;
+      padding-bottom: 12px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #4f46e5;
+      font-size: 13pt;
+      font-style: italic;
+      margin-bottom: 25px;
+    }
+    .meta-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+      font-size: 10.5pt;
+    }
+    .meta-table th, .meta-table td {
+      border: 1px solid #cbd5e1;
+      padding: 10px 14px;
+      text-align: left;
+    }
+    .meta-table th {
+      background-color: #f8fafc;
+      width: 25%;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    h2 {
+      font-size: 16pt;
+      border-bottom: 1.5px solid #cbd5e1;
+      padding-bottom: 6px;
+      margin-top: 35px;
+      color: #4338ca;
+    }
+    h3 {
+      font-size: 12.5pt;
+      margin-top: 20px;
+      color: #1e293b;
+    }
+    p, li {
+      font-size: 10.5pt;
+      color: #334155;
+    }
+    ul, ol {
+      padding-left: 24px;
+      margin-bottom: 16px;
+    }
+    li {
+      margin-bottom: 6px;
+    }
+    .diagram-container {
+      text-align: center;
+      margin: 20px 0;
+      background: #090d16;
+      padding: 15px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    }
+    .diagram-container svg {
+      width: 100%;
+      max-width: 900px;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+    .screenshot-card {
+      margin: 25px 0;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      background: #fafafa;
+    }
+    .screenshot-card img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .screenshot-caption {
+      padding: 14px 18px;
+      background: #ffffff;
+      font-size: 10pt;
+      color: #475569;
+    }
+    .formula-box {
+      background: #f8fafc;
+      border-left: 4px solid #4f46e5;
+      padding: 12px 18px;
+      margin: 15px 0;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 10pt;
+      color: #1e293b;
+      line-height: 1.8;
+    }
+    @media print {
+      body {
+        padding: 0;
+      }
+      .screenshot-card, .diagram-container {
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>NovaStore — Mini E-Commerce & Realtime Dashboard</h1>
+  <div class="subtitle">Technical Assessment & User Documentation Submission Package</div>
+
+  <table class="meta-table">
+    <tr>
+      <th>Candidate Name</th>
+      <td><strong>Azmi</strong></td>
+    </tr>
+    <tr>
+      <th>Email Subject</th>
+      <td><code>User Documentation-Azmi</code></td>
+    </tr>
+    <tr>
+      <th>Target Recipient</th>
+      <td><code>amartawiragunamandiri@gmail.com</code></td>
+    </tr>
+    <tr>
+      <th>Tech Stack</th>
+      <td>Next.js 16 (App Router, Turbopack), Supabase (PostgreSQL & Realtime), Tailwind CSS, Vercel</td>
+    </tr>
+    <tr>
+      <th>Live Production URL</th>
+      <td><a href="https://shop.sourcecodejournal.dev" target="_blank">https://shop.sourcecodejournal.dev</a> (or Vercel Edge)</td>
+    </tr>
+  </table>
+
+  <!-- 1. PRD -->
+  <h2>1. Product Requirement Document (PRD)</h2>
+  
+  <h3>1.1 Executive Summary & Mission</h3>
+  <p>
+    <strong>NovaStore</strong> is an enterprise-grade digital commerce platform engineered for single-merchant operations. It eliminates shopping barriers through a frictionless multi-product guest checkout while equipping store administrators and warehouse operators with a real-time command center powered by Supabase PostgreSQL WebSockets.
+  </p>
+
+  <h3>1.2 Core Specifications & Functional Modules</h3>
+  <ul>
+    <li><strong>Frictionless Guest Checkout (Multi-Product):</strong> Customers can browse items, adjust quantities, add multiple different products to the cart, and complete orders with zero registration or login requirements.</li>
+    <li><strong>Interactive Map Geolocation (OpenStreetMap & GPS):</strong> Integrated map coordinate visualizer with HTML5 GPS auto-location and interactive coordinate pinning.</li>
+    <li><strong>Multi-Courier Logistics Engine:</strong> Real-time distance-based tariff estimation using the Haversine formula across <strong>JNE Express, J&T Express, Shopee Xpress, SiCepat, and Instant Courier</strong>.</li>
+    <li><strong>2.5% Administrative Service Fee:</strong> Automatically calculated as <code>Math.round(cartTotal * 0.025)</code> and itemized transparently across checkout, confirmation receipts, and official corporate invoices.</li>
+    <li><strong>Zero-Fee Direct Payment Verification:</strong> Direct 0% MDR Instant QRIS and Manual Bank Transfer (BCA, Mandiri) with payment receipt screenshot upload and 1-click admin approval/rejection.</li>
+    <li><strong>Real-time Operations Dashboard:</strong> Real-time WebSocket subscriptions on PostgreSQL changes, visual KPI analytics graphs (Recharts), inventory CRUD, and 1-click CSV/Excel export.</li>
+    <li><strong>Official Corporate Tax Invoices:</strong> Dedicated <code>/invoice/[id]</code> route formatted with DPP (Nilai Kena Pajak), PPN 11%, courier delivery line item, administrative fees, and verified scannable QR verification code.</li>
+  </ul>
+
+  <h3>1.3 Mathematical & Fee Formulations</h3>
+  <div class="formula-box">
+    • Product Subtotal = Sum(Unit Price × Quantity)<br>
+    • Shipping Tariff = Base Cost + (Distance in KM × Tariff per KM)<br>
+    • Admin Fee (Biaya Layanan 2.5%) = Round(Product Subtotal × 0.025)<br>
+    • Grand Total = Product Subtotal + Shipping Tariff + Admin Fee<br>
+    • Tax Base (DPP) = Round(Product Subtotal / 1.11)<br>
+    • PPN 11% = Product Subtotal - DPP
+  </div>
+
+  <!-- 2. ERD -->
+  <h2>2. Entity Relationship Diagram (ERD) & Database Schema</h2>
+  <p>The database is architected on Supabase PostgreSQL with performance indexes and Row Level Security (RLS):</p>
+  
+  <div class="diagram-container">
+    <svg width="900" height="520" viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg" style="background:#090d16; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <!-- Background Grid -->
+      <defs>
+        <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#4F46E5"/>
+          <stop offset="100%" stop-color="#06B6D4"/>
+        </linearGradient>
+      </defs>
+
+      <!-- Title -->
+      <text x="450" y="35" text-anchor="middle" fill="#F8FAFC" font-size="18" font-weight="bold">NOVASTORE — POSTGRESQL ENTITY RELATIONSHIP DIAGRAM (ERD)</text>
+      <text x="450" y="55" text-anchor="middle" fill="#94A3B8" font-size="12">Single-Merchant Digital Commerce &amp; Real-time Operations Schema</text>
+
+      <!-- PRODUCTS Table -->
+      <g transform="translate(40, 80)">
+        <rect width="250" height="380" rx="12" fill="#0F172A" stroke="#4F46E5" stroke-width="2"/>
+        <rect width="250" height="40" rx="12" fill="#4F46E5"/>
+        <rect y="25" width="250" height="15" fill="#4F46E5"/>
+        <text x="125" y="25" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="bold">📦 PRODUCTS</text>
+        
+        <g transform="translate(15, 60)" font-size="11" fill="#E2E8F0">
+          <text y="0" font-weight="bold" fill="#38BDF8">🔑 id: UUID (PK)</text>
+          <text y="24">name: VARCHAR(255)</text>
+          <text y="48">description: TEXT</text>
+          <text y="72" fill="#4ADE80">price: NUMERIC(12,2)</text>
+          <text y="96" fill="#FBBF24">stock: INTEGER</text>
+          <text y="120">image_url: TEXT</text>
+          <text y="144">category: VARCHAR(100)</text>
+          <text y="168">seller_email: VARCHAR</text>
+          <text y="192">seller_name: VARCHAR</text>
+          <text y="216" fill="#94A3B8">created_at: TIMESTAMPTZ</text>
+          <line x1="0" y1="235" x2="220" y2="235" stroke="#334155" stroke-width="1"/>
+          <text y="255" fill="#A855F7" font-size="10">RLS: Public Read (SELECT)</text>
+          <text y="272" fill="#A855F7" font-size="10">RLS: Admin Manage (ALL)</text>
+        </g>
+      </g>
+
+      <!-- ORDERS Table -->
+      <g transform="translate(610, 80)">
+        <rect width="250" height="410" rx="12" fill="#0F172A" stroke="#06B6D4" stroke-width="2"/>
+        <rect width="250" height="40" rx="12" fill="#06B6D4"/>
+        <rect y="25" width="250" height="15" fill="#06B6D4"/>
+        <text x="125" y="25" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="bold">🛒 ORDERS</text>
+        
+        <g transform="translate(15, 60)" font-size="11" fill="#E2E8F0">
+          <text y="0" font-weight="bold" fill="#38BDF8">🔑 id: UUID (PK)</text>
+          <text y="22">customer_name: VARCHAR</text>
+          <text y="44">customer_email: VARCHAR</text>
+          <text y="66">customer_phone: VARCHAR</text>
+          <text y="88">customer_address: TEXT</text>
+          <text y="110" font-weight="bold" fill="#4ADE80">total_amount: NUMERIC</text>
+          <text y="132" fill="#FBBF24">admin_fee (2.5%): NUMERIC</text>
+          <text y="154">shipping_courier: VARCHAR</text>
+          <text y="176">shipping_cost: NUMERIC</text>
+          <text y="198" fill="#38BDF8">destination_lat/lng: NUMERIC</text>
+          <text y="220">payment_proof_url: TEXT</text>
+          <text y="242">payment_verified: BOOLEAN</text>
+          <text y="264" fill="#F43F5E">status: VARCHAR(50)</text>
+          <text y="286">payment_method: VARCHAR</text>
+          <text y="308" fill="#94A3B8">created_at: TIMESTAMPTZ</text>
+          <line x1="0" y1="322" x2="220" y2="322" stroke="#334155" stroke-width="1"/>
+          <text y="338" fill="#A855F7" font-size="10">RLS: Public INSERT (Guest)</text>
+        </g>
+      </g>
+
+      <!-- ORDER_ITEMS Table (Junction) -->
+      <g transform="translate(325, 140)">
+        <rect width="250" height="280" rx="12" fill="#0F172A" stroke="#10B981" stroke-width="2"/>
+        <rect width="250" height="40" rx="12" fill="#10B981"/>
+        <rect y="25" width="250" height="15" fill="#10B981"/>
+        <text x="125" y="25" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="bold">📋 ORDER_ITEMS</text>
+        
+        <g transform="translate(15, 60)" font-size="11" fill="#E2E8F0">
+          <text y="0" font-weight="bold" fill="#38BDF8">🔑 id: UUID (PK)</text>
+          <text y="24" fill="#F43F5E">🔗 order_id: UUID (FK)</text>
+          <text y="48" fill="#4F46E5">🔗 product_id: UUID (FK)</text>
+          <text y="72" font-weight="bold" fill="#FBBF24">quantity: INTEGER</text>
+          <text y="96">unit_price: NUMERIC(12,2)</text>
+          <text y="120" fill="#4ADE80">subtotal: NUMERIC(12,2)</text>
+          <text y="144" fill="#94A3B8">created_at: TIMESTAMPTZ</text>
+          <line x1="0" y1="165" x2="220" y2="165" stroke="#334155" stroke-width="1"/>
+          <text y="185" fill="#A855F7" font-size="10">Multi-Product Support 1:N</text>
+        </g>
+      </g>
+
+      <!-- Connecting Lines -->
+      <path d="M 290 250 L 325 250" stroke="#4F46E5" stroke-width="3" fill="none" stroke-dasharray="4"/>
+      <circle cx="295" cy="250" r="4" fill="#4F46E5"/>
+      <text x="302" y="240" fill="#E2E8F0" font-size="10" font-weight="bold">1:N</text>
+
+      <path d="M 610 250 L 575 250" stroke="#06B6D4" stroke-width="3" fill="none" stroke-dasharray="4"/>
+      <circle cx="605" cy="250" r="4" fill="#06B6D4"/>
+      <text x="585" y="240" fill="#E2E8F0" font-size="10" font-weight="bold">1:N</text>
+    </svg>
+  </div>
+
+  <ul>
+    <li><strong><code>products</code> Table:</strong> <code>id (UUID, PK)</code>, <code>name (VARCHAR)</code>, <code>description (TEXT)</code>, <code>price (NUMERIC)</code>, <code>stock (INTEGER)</code>, <code>image_url (TEXT)</code>, <code>category (VARCHAR)</code>, <code>created_at (TIMESTAMPTZ)</code>.</li>
+    <li><strong><code>orders</code> Table:</strong> <code>id (UUID, PK)</code>, <code>customer_name</code>, <code>customer_email</code>, <code>customer_phone</code>, <code>customer_address</code>, <code>total_amount</code>, <code>admin_fee</code>, <code>shipping_courier</code>, <code>shipping_cost</code>, <code>destination_lat</code>, <code>destination_lng</code>, <code>payment_proof_url</code>, <code>payment_verified</code>, <code>status</code>, <code>payment_method</code>, <code>created_at</code>.</li>
+    <li><strong><code>order_items</code> Table:</strong> <code>id (UUID, PK)</code>, <code>order_id (FK -> orders)</code>, <code>product_id (FK -> products)</code>, <code>quantity</code>, <code>unit_price</code>, <code>subtotal</code>, <code>created_at</code>.</li>
+  </ul>
+
+  <!-- 3. SYSTEM FLOWCHART -->
+  <h2>3. System Architecture & Flowchart (Alur Pikir)</h2>
+  
+  <div class="diagram-container">
+    <svg width="900" height="520" viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg" style="background:#090d16; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <!-- Title -->
+      <text x="450" y="35" text-anchor="middle" fill="#F8FAFC" font-size="18" font-weight="bold">NOVASTORE — SYSTEM ARCHITECTURE &amp; DATA FLOW</text>
+      <text x="450" y="55" text-anchor="middle" fill="#94A3B8" font-size="12">Next.js 16 App Router &amp; Supabase PostgreSQL Real-time WebSockets</text>
+
+      <!-- Layer 1: Client / Presentation Layer -->
+      <g transform="translate(30, 80)">
+        <rect width="250" height="400" rx="14" fill="#0F172A" stroke="#334155" stroke-width="2"/>
+        <rect width="250" height="35" rx="14" fill="#1E293B"/>
+        <rect y="20" width="250" height="15" fill="#1E293B"/>
+        <text x="125" y="23" text-anchor="middle" fill="#38BDF8" font-size="12" font-weight="bold">🌐 CLIENT LAYER (UI/UX)</text>
+
+        <g transform="translate(15, 50)">
+          <rect width="220" height="45" rx="8" fill="#1E293B" stroke="#4F46E5"/>
+          <text x="110" y="20" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Guest Shopper Storefront</text>
+          <text x="110" y="35" text-anchor="middle" fill="#94A3B8" font-size="9">Catalog Search &amp; Category Filters</text>
+        </g>
+        <g transform="translate(15, 105)">
+          <rect width="220" height="45" rx="8" fill="#1E293B" stroke="#4F46E5"/>
+          <text x="110" y="20" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Cart Drawer &amp; Map Location</text>
+          <text x="110" y="35" text-anchor="middle" fill="#94A3B8" font-size="9">OpenStreetMap Pinning &amp; Couriers</text>
+        </g>
+        <g transform="translate(15, 160)">
+          <rect width="220" height="45" rx="8" fill="#1E293B" stroke="#4F46E5"/>
+          <text x="110" y="20" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Guest Checkout Form</text>
+          <text x="110" y="35" text-anchor="middle" fill="#94A3B8" font-size="9">2.5% Fee &amp; Proof Screenshot</text>
+        </g>
+        <g transform="translate(15, 215)">
+          <rect width="220" height="45" rx="8" fill="#1E293B" stroke="#06B6D4"/>
+          <text x="110" y="20" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Admin Operations Dashboard</text>
+          <text x="110" y="35" text-anchor="middle" fill="#94A3B8" font-size="9">Live KPI Recharts &amp; Orders Table</text>
+        </g>
+        <g transform="translate(15, 270)">
+          <rect width="220" height="45" rx="8" fill="#1E293B" stroke="#06B6D4"/>
+          <text x="110" y="20" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Payment Verification Lightbox</text>
+          <text x="110" y="35" text-anchor="middle" fill="#94A3B8" font-size="9">1-Click Approve / Reject Proof</text>
+        </g>
+        <g transform="translate(15, 325)">
+          <rect width="220" height="45" rx="8" fill="#1E293B" stroke="#10B981"/>
+          <text x="110" y="20" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Official Corporate Tax Invoice</text>
+          <text x="110" y="35" text-anchor="middle" fill="#94A3B8" font-size="9">DPP + PPN 11% &amp; QR Validation</text>
+        </g>
+      </g>
+
+      <!-- Layer 2: Next.js Application Layer -->
+      <g transform="translate(325, 80)">
+        <rect width="250" height="400" rx="14" fill="#0F172A" stroke="#334155" stroke-width="2"/>
+        <rect width="250" height="35" rx="14" fill="#1E293B"/>
+        <rect y="20" width="250" height="15" fill="#1E293B"/>
+        <text x="125" y="23" text-anchor="middle" fill="#A855F7" font-size="12" font-weight="bold">⚙️ NEXT.JS APPLICATION LAYER</text>
+
+        <g transform="translate(15, 55)">
+          <rect width="220" height="65" rx="8" fill="#1E293B" stroke="#6366F1"/>
+          <text x="110" y="22" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">App Router &amp; Server Engine</text>
+          <text x="110" y="40" text-anchor="middle" fill="#94A3B8" font-size="9">Turbopack compilation</text>
+          <text x="110" y="54" text-anchor="middle" fill="#94A3B8" font-size="9">TypeScript Strict Architecture</text>
+        </g>
+        <g transform="translate(15, 135)">
+          <rect width="220" height="65" rx="8" fill="#1E293B" stroke="#6366F1"/>
+          <text x="110" y="22" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Logistics &amp; Tariff Matrix</text>
+          <text x="110" y="40" text-anchor="middle" fill="#94A3B8" font-size="9">Haversine distance calculation</text>
+          <text x="110" y="54" text-anchor="middle" fill="#94A3B8" font-size="9">JNE, J&amp;T, SPX, SiCepat, Instant</text>
+        </g>
+        <g transform="translate(15, 215)">
+          <rect width="220" height="65" rx="8" fill="#1E293B" stroke="#6366F1"/>
+          <text x="110" y="22" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Financial Engine (2.5% Fee)</text>
+          <text x="110" y="40" text-anchor="middle" fill="#94A3B8" font-size="9">Automated platform fee formula</text>
+          <text x="110" y="54" text-anchor="middle" fill="#94A3B8" font-size="9">Corporate PPN 11% Tax Invoicing</text>
+        </g>
+        <g transform="translate(15, 295)">
+          <rect width="220" height="65" rx="8" fill="#1E293B" stroke="#6366F1"/>
+          <text x="110" y="22" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">CSV Financial Exporter</text>
+          <text x="110" y="40" text-anchor="middle" fill="#94A3B8" font-size="9">1-Click Excel/CSV report generator</text>
+          <text x="110" y="54" text-anchor="middle" fill="#94A3B8" font-size="9">Full accounting transaction export</text>
+        </g>
+      </g>
+
+      <!-- Layer 3: Database & Realtime Layer -->
+      <g transform="translate(620, 80)">
+        <rect width="250" height="400" rx="14" fill="#0F172A" stroke="#334155" stroke-width="2"/>
+        <rect width="250" height="35" rx="14" fill="#1E293B"/>
+        <rect y="20" width="250" height="15" fill="#1E293B"/>
+        <text x="125" y="23" text-anchor="middle" fill="#10B981" font-size="12" font-weight="bold">🗄️ SUPABASE BACKEND LAYER</text>
+
+        <g transform="translate(15, 60)">
+          <rect width="220" height="65" rx="8" fill="#1E293B" stroke="#10B981"/>
+          <text x="110" y="22" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">PostgreSQL 15+ Database</text>
+          <text x="110" y="40" text-anchor="middle" fill="#94A3B8" font-size="9">products, orders, order_items</text>
+          <text x="110" y="54" text-anchor="middle" fill="#94A3B8" font-size="9">Indexed query execution</text>
+        </g>
+        <g transform="translate(15, 145)">
+          <rect width="220" height="65" rx="8" fill="#1E293B" stroke="#10B981"/>
+          <text x="110" y="22" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Supabase Realtime Engine</text>
+          <text x="110" y="40" text-anchor="middle" fill="#94A3B8" font-size="9">PostgreSQL CDC (Change Data)</text>
+          <text x="110" y="54" text-anchor="middle" fill="#94A3B8" font-size="9">Instant WebSocket broadcasts</text>
+        </g>
+        <g transform="translate(15, 230)">
+          <rect width="220" height="65" rx="8" fill="#1E293B" stroke="#10B981"/>
+          <text x="110" y="22" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Row Level Security (RLS)</text>
+          <text x="110" y="40" text-anchor="middle" fill="#94A3B8" font-size="9">Public Guest INSERT enabled</text>
+          <text x="110" y="54" text-anchor="middle" fill="#94A3B8" font-size="9">Admin authenticated security</text>
+        </g>
+        <g transform="translate(15, 315)">
+          <rect width="220" height="65" rx="8" fill="#1E293B" stroke="#10B981"/>
+          <text x="110" y="22" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Supabase Auth Service</text>
+          <text x="110" y="40" text-anchor="middle" fill="#94A3B8" font-size="9">JWT Token session validation</text>
+          <text x="110" y="54" text-anchor="middle" fill="#94A3B8" font-size="9">Protected admin dashboard routes</text>
+        </g>
+      </g>
+
+      <!-- Connectors -->
+      <path d="M 280 200 L 325 200" stroke="#6366F1" stroke-width="3" fill="none"/>
+      <path d="M 575 200 L 620 200" stroke="#10B981" stroke-width="3" fill="none"/>
+      <path d="M 620 300 L 575 300" stroke="#06B6D4" stroke-width="3" fill="none"/>
+      <path d="M 325 300 L 280 300" stroke="#06B6D4" stroke-width="3" fill="none"/>
+    </svg>
+  </div>
+
+  <h3>3.1 Step-by-Step System Flow (Alur Pikir)</h3>
+  <ol>
+    <li><strong>Customer Catalog & Multi-Product Cart:</strong> Customer browses catalog, specifies quantities, and adds items to the slide-over cart drawer.</li>
+    <li><strong>Map Location & Courier Selection:</strong> Customer opens checkout, pins GPS coordinates on the interactive map, and chooses their preferred courier.</li>
+    <li><strong>Fee Calculation & Payment Upload:</strong> System calculates the 2.5% administrative fee. Customer scans QRIS or transfers to bank accounts, attaching a payment receipt screenshot.</li>
+    <li><strong>Order Broadcast:</strong> Order is written to Supabase PostgreSQL, instantly triggering a real-time WebSocket push alert to the Admin Dashboard without page refresh.</li>
+    <li><strong>Admin Verification:</strong> Admin inspects the payment proof screenshot in full-resolution lightbox and 1-click approves the transaction.</li>
+    <li><strong>Fulfillment & Invoice:</strong> Order status transitions from <em>Pending</em> &rarr; <em>Processing</em> &rarr; <em>Completed</em>. Scannable corporate tax invoices are generated for customer verification.</li>
+  </ol>
+
+  <!-- 4. LOG PROMPTING AI -->
+  <h2>4. Log Prompting AI (Catatan Prompt & Alur Pengerjaan)</h2>
+  <p>Chronological breakdown of prompts, architectural iterations, and agent actions:</p>
+  
+  <ul>
+    <li><strong>Session 1 (Project Scoping & Rules):</strong> Formulated <code>.agents/rules/AGENTS.md</code>, analyzed Supabase free-tier limits, and designed the implementation plan.</li>
+    <li><strong>Session 2 (Database Schema & Scaffolding):</strong> Initialized Next.js App Router, created <code>supabase/schema.sql</code> with RLS policies, and wrote preliminary documentation.</li>
+    <li><strong>Session 3 (Full-Stack Implementation):</strong> Built multi-product cart drawer, storefront product catalog, guest checkout, and real-time WebSocket dashboard with Recharts analytics.</li>
+    <li><strong>Session 4 (Database Sync & Persistence):</strong> Verified WebSocket broadcasts and updated RLS <code>SELECT</code> policies for permanent order persistence.</li>
+    <li><strong>Session 5 (Modern UI/UX & Invoices):</strong> Eliminated <code>window.confirm()</code> in favor of custom glassmorphism modal dialogs, built dedicated <code>/invoice/[id]</code> corporate tax invoice route with QR code, and added 1-click CSV export.</li>
+    <li><strong>Session 6 (Logistics & 2.5% Admin Fee Engine):</strong> Built <code>MapLocationPicker</code> with GPS and OpenStreetMap, multi-courier matrix (JNE, J&T, SPX, SiCepat, Instant), 2.5% admin fee arithmetic, and payment proof receipt screenshot uploader.</li>
+    <li><strong>Session 7 (Cross-Browser Polish & Seeder):</strong> Added cross-browser styling (Chrome, Edge, Safari, Firefox), sleek dark scrollbars, backdrop blur fallbacks, and 1-click interactive database seeder.</li>
+    <li><strong>Session 8 (Single-Merchant Architecture & Final Submission):</strong> Streamlined architecture to pure single-merchant operations, removed registration confusion, added QRIS screenshot proof verification, created database reset script, and compiled Word/PDF documentation.</li>
+  </ul>
+
+  <!-- 5. SCREENSHOTS -->
+  <h2>5. UI Screenshots & Visual User Documentation (Non-Teknis)</h2>
+  <p>High-resolution visual walkthrough captures of all key application flows:</p>
+
+  <div class="screenshot-card">
+    <img src="screenshots/01_storefront_homepage.png" alt="01 Storefront Homepage">
+    <div class="screenshot-caption">
+      <strong>5.1 Storefront Homepage (Public Catalog & Search):</strong> Clean dark-mode storefront displaying product catalog, stock badges, live search bar, and category filters (Electronics, Audio, Wearables, Accessories, Lifestyle).
+    </div>
+  </div>
+
+  <div class="screenshot-card">
+    <img src="screenshots/02_product_catalog.png" alt="02 Product Catalog">
+    <div class="screenshot-caption">
+      <strong>5.2 Product Catalog Grid & Quantity Adjusters:</strong> Interactive product cards with quantity selectors and "Add to Cart" triggers providing instant visual feedback.
+    </div>
+  </div>
+
+  <div class="screenshot-card">
+    <img src="screenshots/03_cart_drawer.png" alt="03 Cart Drawer">
+    <div class="screenshot-caption">
+      <strong>5.3 Slide-Over Multi-Product Cart Drawer:</strong> Drawer allowing customers to manage multiple different products, view subtotal calculations, and proceed directly to guest checkout.
+    </div>
+  </div>
+
+  <div class="screenshot-card">
+    <img src="screenshots/04_guest_checkout_form.png" alt="04 Guest Checkout Form">
+    <div class="screenshot-caption">
+      <strong>5.4 Express Guest Checkout Form & Map Geolocation:</strong> Frictionless checkout requiring zero login. Integrates OpenStreetMap GPS pinning, dynamic multi-courier selection, automatic 2.5% administrative fee calculation, and QRIS / Bank Transfer receipt screenshot uploader.
+    </div>
+  </div>
+
+  <div class="screenshot-card">
+    <img src="screenshots/05_order_success_receipt.png" alt="05 Order Success Receipt">
+    <div class="screenshot-caption">
+      <strong>5.5 Order Confirmation & Confetti Celebration:</strong> Celebratory order confirmation featuring a unique UUID, itemized receipt, and direct links to view the corporate tax invoice.
+    </div>
+  </div>
+
+  <div class="screenshot-card">
+    <img src="screenshots/06_admin_dashboard_overview.png" alt="06 Admin Dashboard Overview">
+    <div class="screenshot-caption">
+      <strong>5.6 Real-Time Admin Operations Dashboard:</strong> Operations command center featuring live KPI summary cards (Total Revenue, Order Count, Completed vs. Pending rates, AOV), visual Recharts revenue streams, and status donut charts.
+    </div>
+  </div>
+
+  <div class="screenshot-card">
+    <img src="screenshots/07_realtime_websocket_alert.png" alt="07 Real-time WebSocket Alert">
+    <div class="screenshot-caption">
+      <strong>5.7 Live WebSocket Push Notification Alert:</strong> Instant push notification toast banner highlighting live incoming orders via Supabase PostgreSQL WebSockets without requiring a page refresh.
+    </div>
+  </div>
+
+  <div class="screenshot-card">
+    <img src="screenshots/08_admin_orders_management_table.png" alt="08 Orders Management Table">
+    <div class="screenshot-caption">
+      <strong>5.8 Live Orders Management Table & Courier Badges:</strong> Orders table with status dropdown switchers, search query filters, courier logistics badges, payment proof inspection triggers, and 1-click CSV export.
+    </div>
+  </div>
+
+</body>
+</html>

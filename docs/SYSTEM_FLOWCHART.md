@@ -6,27 +6,27 @@ NovaStore operates as a modern cloud-native single-merchant digital commerce pla
 
 ```mermaid
 graph TD
-    subgraph Client Layer
-        A[Guest Shopper Storefront]
-        B[Interactive Cart Drawer]
-        C[Map Geolocation & Courier Selector]
-        D[Payment & Receipt Uploader]
-        E[Admin Real-time Dashboard]
-        F[Official Tax Invoice Generator]
+    subgraph Client_Layer["Client Layer"]
+        A["Guest Shopper Storefront"]
+        B["Interactive Cart Drawer"]
+        C["Map Geolocation & Courier Selector"]
+        D["Payment & Receipt Uploader"]
+        E["Admin Real-time Dashboard"]
+        F["Official Tax Invoice Generator"]
     end
 
-    subgraph Application & API Layer (Next.js)
-        G[Next.js App Router]
-        H[Server-Side State & Fallback Engine]
-        I[Real-time WebSocket Manager]
-        J[CSV / Excel Financial Exporter]
+    subgraph App_Layer["Application & API Layer (Next.js)"]
+        G["Next.js App Router"]
+        H["Server-Side State & Fallback Engine"]
+        I["Real-time WebSocket Manager"]
+        J["CSV / Excel Financial Exporter"]
     end
 
-    subgraph Data & Storage Layer (Supabase)
-        K[(PostgreSQL Database)]
-        L[Supabase Realtime WebSockets]
-        M[Row Level Security / RLS]
-        N[Supabase Auth Service]
+    subgraph Data_Layer["Data & Storage Layer (Supabase)"]
+        K[("PostgreSQL Database")]
+        L["Supabase Realtime WebSockets"]
+        M["Row Level Security / RLS"]
+        N["Supabase Auth Service"]
     end
 
     A --> B
@@ -61,7 +61,7 @@ sequenceDiagram
     Map-->>UI: Calculate KM distance & dynamic courier tariff
     UI->>UI: Auto-calculate 2.5% Admin Service Fee
     Customer->>UI: Choose Payment (QRIS / Bank Transfer / COD)
-    opt Bank Transfer
+    opt Payment Screenshot Proof
         Customer->>UI: Upload Payment Receipt screenshot
     end
     Customer->>UI: Click "Place Order"

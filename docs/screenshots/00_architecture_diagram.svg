@@ -1,0 +1,118 @@
+
+<svg width="900" height="520" viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg" style="background:#090d16; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <!-- Title -->
+  <text x="450" y="35" text-anchor="middle" fill="#F8FAFC" font-size="18" font-weight="bold">NOVASTORE — SYSTEM ARCHITECTURE & DATA FLOW</text>
+  <text x="450" y="55" text-anchor="middle" fill="#94A3B8" font-size="12">Next.js 16 App Router & Supabase PostgreSQL Real-time WebSockets</text>
+
+  <!-- Layer 1: Client / Presentation Layer -->
+  <g transform="translate(30, 80)">
+    <rect width="250" height="400" rx="14" fill="#0F172A" stroke="#334155" stroke-width="2"/>
+    <rect width="250" height="35" rx="14" fill="#1E293B"/>
+    <rect y="20" width="250" height="15" fill="#1E293B"/>
+    <text x="125" y="23" text-anchor="middle" fill="#38BDF8" font-size="12" font-weight="bold">🌐 CLIENT LAYER (UI/UX)</text>
+
+    <!-- Sub-blocks -->
+    <g transform="translate(15, 50)">
+      <rect width="220" height="45" rx="8" fill="#1E293B" stroke="#4F46E5"/>
+      <text x="110" y="20" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Guest Shopper Storefront</text>
+      <text x="110" y="35" text-anchor="middle" fill="#94A3B8" font-size="9">Catalog Search & Category Filters</text>
+    </g>
+    <g transform="translate(15, 105)">
+      <rect width="220" height="45" rx="8" fill="#1E293B" stroke="#4F46E5"/>
+      <text x="110" y="20" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Cart Drawer & Map Location</text>
+      <text x="110" y="35" text-anchor="middle" fill="#94A3B8" font-size="9">OpenStreetMap Pinning & Couriers</text>
+    </g>
+    <g transform="translate(15, 160)">
+      <rect width="220" height="45" rx="8" fill="#1E293B" stroke="#4F46E5"/>
+      <text x="110" y="20" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Guest Checkout Form</text>
+      <text x="110" y="35" text-anchor="middle" fill="#94A3B8" font-size="9">2.5% Fee & Proof Screenshot</text>
+    </g>
+    <g transform="translate(15, 215)">
+      <rect width="220" height="45" rx="8" fill="#1E293B" stroke="#06B6D4"/>
+      <text x="110" y="20" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Admin Operations Dashboard</text>
+      <text x="110" y="35" text-anchor="middle" fill="#94A3B8" font-size="9">Live KPI Recharts & Orders Table</text>
+    </g>
+    <g transform="translate(15, 270)">
+      <rect width="220" height="45" rx="8" fill="#1E293B" stroke="#06B6D4"/>
+      <text x="110" y="20" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Payment Verification Lightbox</text>
+      <text x="110" y="35" text-anchor="middle" fill="#94A3B8" font-size="9">1-Click Approve / Reject Proof</text>
+    </g>
+    <g transform="translate(15, 325)">
+      <rect width="220" height="45" rx="8" fill="#1E293B" stroke="#10B981"/>
+      <text x="110" y="20" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Official Corporate Tax Invoice</text>
+      <text x="110" y="35" text-anchor="middle" fill="#94A3B8" font-size="9">DPP + PPN 11% & QR Validation</text>
+    </g>
+  </g>
+
+  <!-- Layer 2: Next.js Application Layer -->
+  <g transform="translate(325, 80)">
+    <rect width="250" height="400" rx="14" fill="#0F172A" stroke="#334155" stroke-width="2"/>
+    <rect width="250" height="35" rx="14" fill="#1E293B"/>
+    <rect y="20" width="250" height="15" fill="#1E293B"/>
+    <text x="125" y="23" text-anchor="middle" fill="#A855F7" font-size="12" font-weight="bold">⚙️ NEXT.JS APPLICATION LAYER</text>
+
+    <g transform="translate(15, 55)">
+      <rect width="220" height="65" rx="8" fill="#1E293B" stroke="#6366F1"/>
+      <text x="110" y="22" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">App Router & Server Engine</text>
+      <text x="110" y="40" text-anchor="middle" fill="#94A3B8" font-size="9">Turbopack compilation</text>
+      <text x="110" y="54" text-anchor="middle" fill="#94A3B8" font-size="9">TypeScript Strict Architecture</text>
+    </g>
+    <g transform="translate(15, 135)">
+      <rect width="220" height="65" rx="8" fill="#1E293B" stroke="#6366F1"/>
+      <text x="110" y="22" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Logistics & Tariff Matrix</text>
+      <text x="110" y="40" text-anchor="middle" fill="#94A3B8" font-size="9">Haversine distance calculation</text>
+      <text x="110" y="54" text-anchor="middle" fill="#94A3B8" font-size="9">JNE, J&amp;T, SPX, SiCepat, Instant</text>
+    </g>
+    <g transform="translate(15, 215)">
+      <rect width="220" height="65" rx="8" fill="#1E293B" stroke="#6366F1"/>
+      <text x="110" y="22" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Financial Engine (2.5% Fee)</text>
+      <text x="110" y="40" text-anchor="middle" fill="#94A3B8" font-size="9">Automated platform fee formula</text>
+      <text x="110" y="54" text-anchor="middle" fill="#94A3B8" font-size="9">Corporate PPN 11% Tax Invoicing</text>
+    </g>
+    <g transform="translate(15, 295)">
+      <rect width="220" height="65" rx="8" fill="#1E293B" stroke="#6366F1"/>
+      <text x="110" y="22" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">CSV Financial Exporter</text>
+      <text x="110" y="40" text-anchor="middle" fill="#94A3B8" font-size="9">1-Click Excel/CSV report generator</text>
+      <text x="110" y="54" text-anchor="middle" fill="#94A3B8" font-size="9">Full accounting transaction export</text>
+    </g>
+  </g>
+
+  <!-- Layer 3: Database & Realtime Layer -->
+  <g transform="translate(620, 80)">
+    <rect width="250" height="400" rx="14" fill="#0F172A" stroke="#334155" stroke-width="2"/>
+    <rect width="250" height="35" rx="14" fill="#1E293B"/>
+    <rect y="20" width="250" height="15" fill="#1E293B"/>
+    <text x="125" y="23" text-anchor="middle" fill="#10B981" font-size="12" font-weight="bold">🗄️ SUPABASE BACKEND LAYER</text>
+
+    <g transform="translate(15, 60)">
+      <rect width="220" height="65" rx="8" fill="#1E293B" stroke="#10B981"/>
+      <text x="110" y="22" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">PostgreSQL 15+ Database</text>
+      <text x="110" y="40" text-anchor="middle" fill="#94A3B8" font-size="9">products, orders, order_items</text>
+      <text x="110" y="54" text-anchor="middle" fill="#94A3B8" font-size="9">Indexed query execution</text>
+    </g>
+    <g transform="translate(15, 145)">
+      <rect width="220" height="65" rx="8" fill="#1E293B" stroke="#10B981"/>
+      <text x="110" y="22" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Supabase Realtime Engine</text>
+      <text x="110" y="40" text-anchor="middle" fill="#94A3B8" font-size="9">PostgreSQL CDC (Change Data)</text>
+      <text x="110" y="54" text-anchor="middle" fill="#94A3B8" font-size="9">Instant WebSocket broadcasts</text>
+    </g>
+    <g transform="translate(15, 230)">
+      <rect width="220" height="65" rx="8" fill="#1E293B" stroke="#10B981"/>
+      <text x="110" y="22" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Row Level Security (RLS)</text>
+      <text x="110" y="40" text-anchor="middle" fill="#94A3B8" font-size="9">Public Guest INSERT enabled</text>
+      <text x="110" y="54" text-anchor="middle" fill="#94A3B8" font-size="9">Admin authenticated security</text>
+    </g>
+    <g transform="translate(15, 315)">
+      <rect width="220" height="65" rx="8" fill="#1E293B" stroke="#10B981"/>
+      <text x="110" y="22" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="bold">Supabase Auth Service</text>
+      <text x="110" y="40" text-anchor="middle" fill="#94A3B8" font-size="9">JWT Token session validation</text>
+      <text x="110" y="54" text-anchor="middle" fill="#94A3B8" font-size="9">Protected admin dashboard routes</text>
+    </g>
+  </g>
+
+  <!-- Connectors -->
+  <path d="M 280 200 L 325 200" stroke="#6366F1" stroke-width="3" fill="none"/>
+  <path d="M 575 200 L 620 200" stroke="#10B981" stroke-width="3" fill="none"/>
+  <path d="M 620 300 L 575 300" stroke="#06B6D4" stroke-width="3" fill="none"/>
+  <path d="M 325 300 L 280 300" stroke="#06B6D4" stroke-width="3" fill="none"/>
+</svg>
