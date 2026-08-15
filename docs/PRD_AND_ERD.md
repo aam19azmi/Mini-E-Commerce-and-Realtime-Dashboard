@@ -19,12 +19,14 @@
    - Instant order confirmation and scannable corporate tax invoice.
 
 2. **Store Operations Officer & Financial Administrator:**
-   - Secure authentication via Supabase Auth or 1-click Demo Admin access.
+   - Secure authentication via Supabase Auth or 1-click Demo Admin access with **Zero-Flash Security Guard** (prevents unauthenticated UI rendering).
    - Real-time live orders monitor powered by Supabase PostgreSQL WebSockets.
    - Interactive financial analytics charts (Revenue trends, Order status distribution, AOV).
    - Payment proof inspection center with full-resolution zoom lightbox and 1-click Approve / Reject.
-   - Automated inventory stock management (automatic decrement on purchase, automatic restitution on cancellation).
+   - Automated inventory stock management (automatic decrement on purchase, automatic restitution on cancellation/customer returns).
+   - Standardized Return Merchandise Authorization (RMA) SOP (Customer returns item to hub &rarr; Physical inspection &rarr; Status `Cancelled` &rarr; 100% refund).
    - Full product catalog inventory CRUD (Create, Read, Update, Delete with modern confirmation modal).
+   - Storefront Corporate Footer with official Jakarta headquarters, customer care contacts, and logistics/payment partner badges.
    - 1-click CSV / Excel export for accounting reports.
    - Live order simulation tool for instant real-time demonstration.
    - 1-click Database Reset modal with Clear Test Orders (0 Orders) and Full Pristine Restore modes.

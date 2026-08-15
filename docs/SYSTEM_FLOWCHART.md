@@ -107,4 +107,37 @@ flowchart TD
     
     ClearOrd --> Sync["Real-time Sync to Dashboard (0 Orders)"]
     Pristine --> Sync
+```
+
+---
+
+## 5. Zero-Flash Admin Authentication Guard Flow
+
+```mermaid
+flowchart TD
+    User["User navigates to /admin/dashboard"] --> Guard{"isCheckingAuth || !isAuthorized"}
+    
+    Guard -->|"True (Default)"| Loader["Render Dark Security Clearance Screen<br/>(Zero Dashboard / Order UI Exposed)"]
+    Loader --> Check["Check Supabase Auth Session & Demo Flag"]
+    
+    Check -->|"Invalid / No Session"| Redirect["router.replace('/admin/login')"]
+    Check -->|"Valid Session / Demo Token"| Authorized["Set isAuthorized = true & isCheckingAuth = false"]
+    
+    Authorized --> Fetch["Execute fetchOrders() & fetchProducts()"]
+    Fetch --> Sub["Subscribe to Realtime WebSockets"]
+    Sub --> Render["Render Full Operations Dashboard & Charts"]
+```
+
+---
+
+## 6. Customer Return & Refund (RMA) Lifecycle Flow
+
+```mermaid
+flowchart LR
+    A["1. Customer Submits Return<br/>(Order ID & Unboxing Video)"] --> B["2. Customer Ships Item<br/>(To Cyber 2 Tower Jakarta Hub)"]
+    B --> C["3. Warehouse Physical Inspection<br/>(Verifies Condition & Serial Tags)"]
+    C --> D["4. Admin Updates Status to 'Cancelled'<br/>(Product Stock Automatically Restored)"]
+    D --> E["5. 100% Monetary Refund Issued<br/>(Within 24 Hours to Original Channel)"]
+```
+
 

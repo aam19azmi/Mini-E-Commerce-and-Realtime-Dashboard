@@ -187,17 +187,28 @@ export default function AdminDashboardPage() {
   };
 
   const [currentAdminEmail, setCurrentAdminEmail] = useState<string>('admin@novastore.com');
+  const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
 
   useEffect(() => {
     async function checkAuth() {
+      setIsCheckingAuth(true);
       const { data } = await supabase.auth.getSession();
       const isDemo = typeof window !== 'undefined' && sessionStorage.getItem('admin_demo_auth') === 'true';
       if (!data.session && !isDemo) {
+        setIsAuthorized(false);
+        setIsCheckingAuth(false);
         router.replace('/admin/login');
-      } else if (data.session?.user?.email) {
-        setCurrentAdminEmail(data.session.user.email);
-      } else if (isDemo) {
-        setCurrentAdminEmail('demo.admin@novastore.com');
+      } else {
+        if (data.session?.user?.email) {
+          setCurrentAdminEmail(data.session.user.email);
+        } else if (isDemo) {
+          setCurrentAdminEmail('demo.admin@novastore.com');
+        }
+        setIsAuthorized(true);
+        setIsCheckingAuth(false);
+        fetchOrders();
+        fetchProducts();
       }
     }
     checkAuth();
@@ -208,12 +219,12 @@ export default function AdminDashboardPage() {
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('admin_demo_auth');
     }
+    setIsAuthorized(false);
     router.push('/admin/login');
   };
 
   useEffect(() => {
-    fetchOrders();
-    fetchProducts();
+    if (!isAuthorized) return;
 
     // Supabase Real-time Subscription on orders
     const channel = supabase
@@ -854,6 +865,21 @@ export default function AdminDashboardPage() {
       order.id.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesSearch;
   });
+
+  if (isCheckingAuth || !isAuthorized) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 px-4 text-center">
+        <div className="relative mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 shadow-2xl shadow-indigo-500/20">
+          <ShieldAlert className="h-8 w-8 animate-pulse text-indigo-400" />
+          <div className="absolute inset-0 rounded-2xl border-2 border-indigo-500/40 animate-ping opacity-25" />
+        </div>
+        <h2 className="text-lg font-bold text-white tracking-tight">Verifying Administrative Clearance...</h2>
+        <p className="mt-1.5 text-xs text-slate-400 max-w-sm">
+          Cryptographically validating Supabase Auth session token &amp; merchant security permissions.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 pb-24 pt-8 print:bg-white print:p-0 print:text-black">
