@@ -5,94 +5,46 @@ import { supabase, Product } from '@/lib/supabase';
 import ProductCard from '@/components/ProductCard';
 import { Search, Sparkles, ShieldCheck, Zap, RefreshCw, ShoppingBag } from 'lucide-react';
 
-// Fallback seed items in case Supabase is not yet populated
-const FALLBACK_PRODUCTS: Product[] = [
-  {
-    id: 'f1e7a1b0-1111-4444-9999-000000000001',
-    name: 'Ergonomic Mechanical Keyboard',
-    description: 'RGB backlit mechanical keyboard with hot-swappable switches and wireless connectivity.',
-    price: 850000,
-    stock: 25,
-    image_url: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80',
-    category: 'Electronics',
-  },
-  {
-    id: 'f1e7a1b0-2222-4444-9999-000000000002',
-    name: 'Wireless Noise-Canceling Headphones',
-    description: 'Premium over-ear headphones with 40-hour battery life and spatial audio support.',
-    price: 1250000,
-    stock: 15,
-    image_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80',
-    category: 'Audio',
-  },
-  {
-    id: 'f1e7a1b0-3333-4444-9999-000000000003',
-    name: 'Smart Fitness Watch Ultra',
-    description: 'AMOLED display, heart rate & SpO2 tracking, 5ATM water resistance with GPS.',
-    price: 650000,
-    stock: 30,
-    image_url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80',
-    category: 'Wearables',
-  },
-  {
-    id: 'f1e7a1b0-4444-4444-9999-000000000004',
-    name: 'Minimalist Leather Laptop Backpack',
-    description: 'Water-resistant canvas and genuine leather backpack fitting up to 16-inch laptops.',
-    price: 450000,
-    stock: 20,
-    image_url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80',
-    category: 'Accessories',
-  },
-  {
-    id: 'f1e7a1b0-5555-4444-9999-000000000005',
-    name: 'Precision Wireless Mouse',
-    description: 'Ultra-lightweight gaming and productivity mouse with 26,000 DPI sensor.',
-    price: 375000,
-    stock: 40,
-    image_url: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=600&q=80',
-    category: 'Electronics',
-  },
-  {
-    id: 'f1e7a1b0-6666-4444-9999-000000000006',
-    name: 'Insulated Stainless Steel Tumbler 750ml',
-    description: 'Keeps beverages ice cold for 24 hours or piping hot for 12 hours.',
-    price: 185000,
-    stock: 50,
-    image_url: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80',
-    category: 'Lifestyle',
-  },
-];
+import { DEFAULT_CATALOG_PRODUCTS } from '@/lib/defaultCatalog';
+import { reconcileProducts, subscribeToStockUpdates } from '@/lib/stockManager';
 
 export default function StorefrontPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(() => reconcileProducts(DEFAULT_CATALOG_PRODUCTS));
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  useEffect(() => {
-    async function fetchProducts() {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .order('created_at', { ascending: false });
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-        if (error || !data || data.length === 0) {
-          console.log('Using default seed products fallback.');
-          setProducts(FALLBACK_PRODUCTS);
-        } else {
-          setProducts(data);
-        }
-      } catch (err) {
-        console.error('Error fetching products from Supabase:', err);
-        setProducts(FALLBACK_PRODUCTS);
-      } finally {
-        setLoading(false);
+      if (error || !data || data.length === 0) {
+        setProducts(reconcileProducts(DEFAULT_CATALOG_PRODUCTS));
+      } else {
+        setProducts(reconcileProducts(data));
       }
+    } catch (err) {
+      console.error('Error fetching products from Supabase:', err);
+      setProducts(reconcileProducts(DEFAULT_CATALOG_PRODUCTS));
+    } finally {
+      setLoading(false);
     }
+  };
 
+  useEffect(() => {
     fetchProducts();
+
+    // Subscribe to real-time Supabase product updates & local stock updates
+    const unsubscribe = subscribeToStockUpdates(() => {
+      fetchProducts();
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const categories = ['All', ...Array.from(new Set(products.map((p) => p.category || 'General')))];

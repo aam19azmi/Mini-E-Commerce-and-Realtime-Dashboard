@@ -30,8 +30,9 @@ NovaStore is an enterprise-grade digital commerce platform built for single-merc
 
 ### 1. 🛍️ Customer Storefront & Guest Checkout
 - **Frictionless Multi-Product Checkout**: Zero login or registration barrier. Customers can browse, select multiple different products, adjust custom quantities, and place consolidated orders.
+- **Dual-Layer Real-Time Stock Engine**: Purchased quantities automatically deduct from both Supabase cloud database and local fallback caches with instant multi-tab WebSocket updates.
 - **Interactive Map Geolocation**: Pin precise delivery coordinates on OpenStreetMap or click **"Use GPS"** for automatic geolocation.
-- **Multi-Courier Shipping Engine**: Dynamic distance-based tariff estimation across Indonesian logistics services (**JNE Express, J&T Express, Shopee Xpress, SiCepat, and Instant Courier**).
+- **Multi-Courier Shipping Engine**: Dynamic distance-based tariff estimation across domestic and international services (**JNE Express, J&T Express, Shopee Xpress, SiCepat, Instant Bike, DHL Express, FedEx, UPS**).
 - **Automated 2.5% Administrative Fee**: Itemized service fee calculation (`Math.round(cartTotal * 0.025)`) displayed transparently across checkout, confirmation receipts, and corporate invoices.
 - **Direct-to-Seller Payment Verification**:
   - **Instant QRIS (0% MDR Fee)** with payment receipt screenshot upload.
@@ -39,9 +40,12 @@ NovaStore is an enterprise-grade digital commerce platform built for single-merc
   - **Cash on Delivery (COD)** upon arrival.
 
 ### 2. ⚡ Real-Time Operations & Admin Command Center
-- **Live WebSocket Orders Monitor**: Instant real-time order broadcast alerts with auditory/visual toast notifications without manual page reloads.
+- **Live WebSocket Orders & Inventory Monitor**: Bi-directional real-time subscriptions on both `orders` and `products` tables with instant visual/auditory alerts.
 - **Visual Analytics & KPI Metrics**: Total revenue, order count, completed vs. pending fulfillment rates, and average order value (AOV) rendered with interactive Recharts.
-- **Payment Proof Verification Center**: Inspect uploaded payment receipt screenshots in full-resolution lightbox and 1-click **Approve** (moves to `processing`) or **Reject** (`cancelled`).
+- **Payment Proof Verification Center**: Inspect uploaded payment receipt screenshots in full-resolution lightbox and 1-click **Approve** (moves to `processing`) or **Reject** (`cancelled` with automatic stock restitution).
+- **1-Click Database Reset Modes**:
+  - **Mode 1 (Clear Orders)**: Cleanly deletes order items and orders to zero (0 orders) without affecting the product catalog.
+  - **Mode 2 (Pristine Restore)**: Cascade reset restoring all 6 flagship products and 3 starter demo orders without foreign key constraint errors.
 - **Product Catalog CRUD**: Complete inventory management (Add, Edit, Delete with modern custom glassmorphism modal dialogs — zero native browser popups).
 - **Financial Reporting**: 1-click CSV/Excel export for accounting and financial auditing.
 - **Official Commercial Tax Invoices**: Dedicated `/invoice/[id]` route featuring DPP + 11% PPN breakdown, courier dispatch info, administrative fees, and verified scannable QR verification code.

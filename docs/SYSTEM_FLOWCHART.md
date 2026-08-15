@@ -17,8 +17,8 @@ graph TD
 
     subgraph App_Layer["Application & API Layer (Next.js)"]
         G["Next.js App Router"]
-        H["Server-Side State & Fallback Engine"]
-        I["Real-time WebSocket Manager"]
+        H["Server-Side State & Stock Manager Engine"]
+        I["Real-time WebSocket Pub/Sub Manager"]
         J["CSV / Excel Financial Exporter"]
     end
 
@@ -33,42 +33,47 @@ graph TD
     B --> C
     C --> D
     D -->|Frictionless Checkout| G
-    G --> K
+    G --> H
+    H --> K
     K -->|Database Triggers| L
     L -->|Instant Push Notification| E
-    E -->|Approve Payment / Update Status| K
+    L -->|Stock Channel Broadcast| A
+    E -->|Approve Payment / Update Status| H
+    H --> K
     E --> J
     E --> F
 ```
 
 ---
 
-## 2. Guest Customer Checkout & Payment Workflow
+## 2. Dual-Layer Guest Customer Checkout & Inventory Sync Workflow
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Customer as Guest Customer
     participant UI as NovaStore Storefront
-    participant Map as Map Location Engine
+    participant SM as Stock Manager (Cloud + Local)
     participant DB as Supabase PostgreSQL
-    participant RT as Supabase Realtime
+    participant RT as Supabase Realtime Channel
     actor Admin as Store Administrator
 
     Customer->>UI: Select products & specify quantities
     Customer->>UI: Open Checkout Form
-    Customer->>Map: Pin GPS delivery location or type address
-    Map-->>UI: Calculate KM distance & dynamic courier tariff
-    UI->>UI: Auto-calculate 2.5% Admin Service Fee
+    Customer->>UI: Pin GPS delivery location or type address
+    UI->>UI: Auto-calculate 2.5% Admin Service Fee & Courier Tariff
     Customer->>UI: Choose Payment (QRIS / Bank Transfer / COD)
     opt Payment Screenshot Proof
         Customer->>UI: Upload Payment Receipt screenshot
     end
     Customer->>UI: Click "Place Order"
     UI->>DB: INSERT into orders & order_items
-    UI->>DB: Decrement product stock (stock = max(0, stock - quantity))
-    DB-->>RT: Broadcast postgres_changes (INSERT event)
+    UI->>SM: deductStock(items)
+    SM->>DB: UPDATE products / RPC deduct_product_stock
+    SM->>SM: Set localStorage override & emit novastore:stock_updated
+    DB-->>RT: Broadcast postgres_changes (orders + products)
     RT-->>Admin: Instant Live Visual & WebSocket Alert on Dashboard!
+    RT-->>UI: Instantly updates stock badge & purchase limits across all open tabs!
     UI->>Customer: Display Order Confirmation & Official Tax Invoice
 ```
 
@@ -80,16 +85,16 @@ sequenceDiagram
 stateDiagram-v2
     [*] --> Pending: Guest Checkout Submitted (Stock Deducted)
     Pending --> Processing: Admin Approves Payment Receipt Proof
-    Pending --> Cancelled: Payment Invalid / Rejected (Stock Automatically Replenished)
+    Pending --> Cancelled: Payment Invalid / Rejected (Stock Automatically Replenished via restoreStock)
     Processing --> Completed: Courier Dispatched & Delivered
-    Cancelled --> Processing: Admin Re-activates Order (Stock Re-deducted)
+    Cancelled --> Processing: Admin Re-activates Order (Stock Re-deducted via deductStock)
     Completed --> [*]
     Cancelled --> [*]
 ```
 
 ---
 
-## 4. Store Operations & Database Reset Architecture
+## 4. Store Operations & Cascade-Safe Database Reset Architecture
 
 ```mermaid
 flowchart TD
@@ -98,15 +103,12 @@ flowchart TD
     Actions -->|"Simulate Order"| Sim["1-Click Real-time Order Simulation"]
     Sim -->|"Broadcasts WebSocket"| WS["Live Push Alert Toast"]
     
-    Actions -->|"Seed Demo Data"| Seed["Injects 12 Flagship Products + Batch Orders"]
-    Seed -->|"Populates Charts"| Charts["Area Revenue & Status Donut Charts"]
-    
     Actions -->|"Reset Data Modal"| ResetModal{"Choose Reset Mode"}
-    ResetModal -->|"Mode 1: Clear Orders"| ClearOrd["Zero-out orders table (Leaves products intact)"]
-    ResetModal -->|"Mode 2: Pristine Restore"| Pristine["Restores 6 default products & 3 starter orders"]
+    ResetModal -->|"Mode 1: Clear Orders"| ClearOrd["1. Delete order_items<br/>2. Delete orders<br/>(Keeps product inventory intact)"]
+    ResetModal -->|"Mode 2: Pristine Restore"| Pristine["1. Cascade TRUNCATE order_items, orders, products<br/>2. Insert deterministic 6 products & 3 starter orders<br/>3. Clear local cache overrides"]
     
-    ClearOrd --> Sync["Real-time Sync to Dashboard (0 Orders)"]
-    Pristine --> Sync
+    ClearOrd --> Sync["Broadcasts novastore:orders_cleared -> Dashboard updates to 0 orders"]
+    Pristine --> SyncReset["Broadcasts novastore:database_reset -> Refetches pristine state in all views"]
 ```
 
 ---
@@ -124,7 +126,7 @@ flowchart TD
     Check -->|"Valid Session / Demo Token"| Authorized["Set isAuthorized = true & isCheckingAuth = false"]
     
     Authorized --> Fetch["Execute fetchOrders() & fetchProducts()"]
-    Fetch --> Sub["Subscribe to Realtime WebSockets"]
+    Fetch --> Sub["Subscribe to Realtime WebSockets (orders + products)"]
     Sub --> Render["Render Full Operations Dashboard & Charts"]
 ```
 
@@ -139,5 +141,3 @@ flowchart LR
     C --> D["4. Admin Updates Status to 'Cancelled'<br/>(Product Stock Automatically Restored)"]
     D --> E["5. 100% Monetary Refund Issued<br/>(Within 24 Hours to Original Channel)"]
 ```
-
-

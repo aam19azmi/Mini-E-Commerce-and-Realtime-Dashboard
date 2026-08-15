@@ -4,6 +4,15 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { supabase, Order, OrderStatus, Product } from '@/lib/supabase';
+import { DEFAULT_CATALOG_PRODUCTS, DEFAULT_STARTER_ORDERS } from '@/lib/defaultCatalog';
+import {
+  reconcileProducts,
+  deductStock,
+  restoreStock,
+  clearAllOrders,
+  resetDatabaseToPristine,
+  subscribeToStockUpdates,
+} from '@/lib/stockManager';
 import { formatPrice, formatDate, STATUS_COLORS } from '@/lib/utils';
 import {
   DollarSign,
@@ -56,53 +65,6 @@ import {
   Legend,
 } from 'recharts';
 
-const SEED_ORDERS: Order[] = [
-  {
-    id: 'ord-8831a-001',
-    customer_name: 'Budi Pratama',
-    customer_email: 'budi.p@example.com',
-    customer_phone: '081298765432',
-    customer_address: 'Jl. Sudirman No. 45, Jakarta Pusat 10220',
-    total_amount: 2100000,
-    shipping_courier: 'JNE Express - Reguler',
-    shipping_cost: 15000,
-    admin_fee: 52500,
-    status: 'completed',
-    payment_method: 'bank_transfer',
-    payment_verified: true,
-    created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-  },
-  {
-    id: 'ord-8831a-002',
-    customer_name: 'Siti Rahma',
-    customer_email: 'siti.rahma@example.com',
-    customer_phone: '085712345678',
-    customer_address: 'Jl. Dago No. 12, Bandung 40132',
-    total_amount: 850000,
-    shipping_courier: 'J&T Express - EZ Standard',
-    shipping_cost: 18000,
-    admin_fee: 21250,
-    status: 'processing',
-    payment_method: 'qris',
-    payment_verified: true,
-    created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-  },
-  {
-    id: 'ord-8831a-003',
-    customer_name: 'Ahmad Fauzi',
-    customer_email: 'fauzi.ahmad@example.com',
-    customer_phone: '081377889900',
-    customer_address: 'Jl. Pemuda No. 88, Surabaya 60271',
-    total_amount: 1435000,
-    shipping_courier: 'Shopee Xpress (SPX) - Eco',
-    shipping_cost: 12000,
-    admin_fee: 35875,
-    status: 'pending',
-    payment_method: 'cash_on_delivery',
-    created_at: new Date(Date.now() - 3600000 * 0.5).toISOString(),
-  },
-];
-
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'orders' | 'products'>('orders');
@@ -122,7 +84,7 @@ export default function AdminDashboardPage() {
   const [sellerBankInfo, setSellerBankInfo] = useState<string>('BCA: 8831-2941-002 • Mandiri: 120-00-9831-412');
 
   // Products State
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(() => reconcileProducts(DEFAULT_CATALOG_PRODUCTS));
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -141,6 +103,12 @@ export default function AdminDashboardPage() {
     setLoading(true);
     try {
       const isCleared = typeof window !== 'undefined' && localStorage.getItem('novastore_orders_cleared') === 'true';
+      if (isCleared) {
+        setOrders([]);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('orders')
         .select('*')
@@ -148,12 +116,10 @@ export default function AdminDashboardPage() {
 
       if (error) {
         console.error('Supabase query error on orders:', error.message);
-        setOrders(isCleared ? [] : SEED_ORDERS);
+        setOrders(DEFAULT_STARTER_ORDERS);
       } else if (data) {
-        if (data.length === 0 && isCleared) {
-          setOrders([]);
-        } else if (data.length === 0 && !isCleared) {
-          setOrders([]);
+        if (data.length === 0) {
+          setOrders(isCleared ? [] : DEFAULT_STARTER_ORDERS);
         } else {
           setOrders(data as Order[]);
         }
@@ -161,7 +127,7 @@ export default function AdminDashboardPage() {
     } catch (e) {
       console.error('Error fetching orders:', e);
       const isCleared = typeof window !== 'undefined' && localStorage.getItem('novastore_orders_cleared') === 'true';
-      setOrders(isCleared ? [] : SEED_ORDERS);
+      setOrders(isCleared ? [] : DEFAULT_STARTER_ORDERS);
     } finally {
       setLoading(false);
     }
@@ -176,11 +142,14 @@ export default function AdminDashboardPage() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!error && data) {
-        setProducts(data as Product[]);
+      if (!error && data && data.length > 0) {
+        setProducts(reconcileProducts(data as Product[]));
+      } else {
+        setProducts(reconcileProducts(DEFAULT_CATALOG_PRODUCTS));
       }
     } catch (e) {
       console.error('Error fetching products:', e);
+      setProducts(reconcileProducts(DEFAULT_CATALOG_PRODUCTS));
     } finally {
       setLoadingProducts(false);
     }
@@ -226,8 +195,8 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     if (!isAuthorized) return;
 
-    // Supabase Real-time Subscription on orders
-    const channel = supabase
+    // 1. Supabase Real-time Subscription on orders table
+    const orderChannel = supabase
       .channel('realtime_orders_dashboard')
       .on(
         'postgres_changes',
@@ -270,10 +239,35 @@ export default function AdminDashboardPage() {
         setRealtimeConnected(status === 'SUBSCRIBED');
       });
 
-    return () => {
-      supabase.removeChannel(channel);
+    // 2. Real-time Subscription on products table + local stock events
+    const unsubscribeStock = subscribeToStockUpdates(() => {
+      fetchProducts();
+    });
+
+    // 3. Local custom event listeners for reset and clear
+    const handleLocalReset = () => {
+      fetchOrders();
+      fetchProducts();
     };
-  }, []);
+
+    const handleLocalClear = () => {
+      setOrders([]);
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('novastore:database_reset', handleLocalReset);
+      window.addEventListener('novastore:orders_cleared', handleLocalClear);
+    }
+
+    return () => {
+      supabase.removeChannel(orderChannel);
+      unsubscribeStock();
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('novastore:database_reset', handleLocalReset);
+        window.removeEventListener('novastore:orders_cleared', handleLocalClear);
+      }
+    };
+  }, [isAuthorized]);
 
   // Update order status & replenish stock if cancelled
   const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
@@ -298,13 +292,9 @@ export default function AdminDashboardPage() {
           .eq('order_id', orderId);
 
         if (items && items.length > 0) {
-          for (const item of items) {
-            const prod = products.find((p) => p.id === item.product_id);
-            if (prod) {
-              const restoredStock = Number(prod.stock || 0) + Number(item.quantity || 0);
-              await supabase.from('products').update({ stock: restoredStock }).eq('id', item.product_id);
-            }
-          }
+          await restoreStock(
+            items.map((i) => ({ productId: i.product_id, quantity: Number(i.quantity) || 0 }))
+          );
           await fetchProducts();
         }
       } else if (previousStatus === 'cancelled' && newStatus !== 'cancelled') {
@@ -315,13 +305,9 @@ export default function AdminDashboardPage() {
           .eq('order_id', orderId);
 
         if (items && items.length > 0) {
-          for (const item of items) {
-            const prod = products.find((p) => p.id === item.product_id);
-            if (prod) {
-              const reDeductedStock = Math.max(0, Number(prod.stock || 0) - Number(item.quantity || 0));
-              await supabase.from('products').update({ stock: reDeductedStock }).eq('id', item.product_id);
-            }
-          }
+          await deductStock(
+            items.map((i) => ({ productId: i.product_id, quantity: Number(i.quantity) || 0 }))
+          );
           await fetchProducts();
         }
       }
@@ -591,16 +577,7 @@ export default function AdminDashboardPage() {
   const handleClearAllOrders = async () => {
     setLoading(true);
     try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('novastore_orders_cleared', 'true');
-      }
-      try {
-        await supabase.from('order_items').delete().gte('created_at', '1970-01-01T00:00:00Z');
-      } catch (e) {}
-      try {
-        await supabase.from('orders').delete().gte('created_at', '1970-01-01T00:00:00Z');
-      } catch (e) {}
-
+      await clearAllOrders();
       setOrders([]);
       setResetModalOpen(false);
       setNewOrderAlert('🧹 All test orders cleared! Ready for live order simulations.');
@@ -616,117 +593,7 @@ export default function AdminDashboardPage() {
   const handleResetPristineDefault = async () => {
     setLoading(true);
     try {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('novastore_orders_cleared');
-      }
-      try {
-        await supabase.from('order_items').delete().gte('created_at', '1970-01-01T00:00:00Z');
-        await supabase.from('orders').delete().gte('created_at', '1970-01-01T00:00:00Z');
-        await supabase.from('products').delete().gte('created_at', '1970-01-01T00:00:00Z');
-      } catch (e) {}
-
-      const pristineProducts = [
-        {
-          name: 'Apex Pro RGB Mechanical Keyboard',
-          description: 'Aircraft-grade aluminum frame, OmniPoint adjustable switches, and per-key RGB illumination with USB passthrough.',
-          price: 1850000,
-          stock: 35,
-          image_url: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80',
-          category: 'Electronics',
-        },
-        {
-          name: 'AeroFit Wireless ANC Headphones',
-          description: 'Active Noise Cancellation, 40-hour ultra battery endurance, and hi-res lossless spatial audio.',
-          price: 1250000,
-          stock: 20,
-          image_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80',
-          category: 'Audio',
-        },
-        {
-          name: 'Vanguard Smart GPS Fitness Watch',
-          description: '1.43" AMOLED Retina display, dual-band GPS, 24/7 heart-rate monitoring, and 5ATM water resistance.',
-          price: 850000,
-          stock: 45,
-          image_url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80',
-          category: 'Wearables',
-        },
-        {
-          name: 'NovaCraft Leather Executive Backpack',
-          description: 'Handcrafted genuine leather and waterproof ballistic canvas tailored for up to 16-inch laptops.',
-          price: 650000,
-          stock: 15,
-          image_url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80',
-          category: 'Accessories',
-        },
-        {
-          name: 'Starlight Wireless Precision Mouse',
-          description: 'Ultra-lightweight 58g frame, 26,000 DPI optical sensor, and zero-latency wireless connectivity.',
-          price: 495000,
-          stock: 50,
-          image_url: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=600&q=80',
-          category: 'Peripherals',
-        },
-        {
-          name: 'HydroShield Vacuum Insulated Tumbler 750ml',
-          description: 'Triple-insulated stainless steel keeps cold for 24 hours and hot for 12 hours. BPA-free leakproof lid.',
-          price: 195000,
-          stock: 60,
-          image_url: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80',
-          category: 'Lifestyle',
-        },
-      ];
-
-      const pristineOrders = [
-        {
-          customer_name: 'Budi Pratama',
-          customer_email: 'budi.pratama@example.com',
-          customer_phone: '081298765432',
-          customer_address: 'Cyber 2 Tower Lt. 18, Jl. H.R. Rasuna Said, Jakarta Selatan 12950',
-          total_amount: 1896250,
-          admin_fee: 46250,
-          shipping_courier: 'JNE Express - Reguler (REG)',
-          shipping_cost: 15000,
-          destination_lat: -6.2255,
-          destination_lng: 106.8318,
-          payment_method: 'qris',
-          payment_verified: true,
-          status: 'completed' as OrderStatus,
-        },
-        {
-          customer_name: 'Siti Rahmadani',
-          customer_email: 'siti.rahma@example.com',
-          customer_phone: '085712345678',
-          customer_address: 'Jl. Ir. H. Juanda No. 120, Dago, Bandung, Jawa Barat 40132',
-          total_amount: 1301250,
-          admin_fee: 31250,
-          shipping_courier: 'J&T Express - EZ Standard',
-          shipping_cost: 20000,
-          destination_lat: -6.885,
-          destination_lng: 107.614,
-          payment_method: 'bank_transfer',
-          payment_verified: true,
-          status: 'processing' as OrderStatus,
-        },
-        {
-          customer_name: 'Andi Wijaya',
-          customer_email: 'andi.wijaya@example.com',
-          customer_phone: '081377889900',
-          customer_address: 'Jl. Pemuda No. 45, Embong Kaliasin, Surabaya, Jawa Timur 60271',
-          total_amount: 886250,
-          admin_fee: 21250,
-          shipping_courier: 'Shopee Xpress (SPX) - Standard Eco',
-          shipping_cost: 15000,
-          destination_lat: -7.265,
-          destination_lng: 112.748,
-          payment_method: 'qris',
-          payment_verified: true,
-          status: 'completed' as OrderStatus,
-        },
-      ];
-
-      await supabase.from('products').insert(pristineProducts);
-      await supabase.from('orders').insert(pristineOrders);
-
+      await resetDatabaseToPristine();
       await fetchProducts();
       await fetchOrders();
 

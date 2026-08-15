@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { supabase } from '@/lib/supabase';
+import { deductStock } from '@/lib/stockManager';
 import { formatPrice } from '@/lib/utils';
 import MapLocationPicker from '@/components/MapLocationPicker';
 import {
@@ -298,16 +299,13 @@ export default function CheckoutPage() {
 
       await supabase.from('order_items').insert(orderItemsToInsert);
 
-      // 3. Automatically deduct product stock in catalog
-      for (const item of cart) {
-        try {
-          const currentStock = Number(item.product.stock) || 0;
-          const updatedStock = Math.max(0, currentStock - item.quantity);
-          await supabase.from('products').update({ stock: updatedStock }).eq('id', item.product.id);
-        } catch (stockErr) {
-          console.warn('Could not deduct stock for product', item.product.id, stockErr);
-        }
-      }
+      // 3. Automatically deduct product stock in catalog (Cloud & Local Parity)
+      await deductStock(
+        cart.map((item) => ({
+          productId: item.product.id,
+          quantity: item.quantity,
+        }))
+      );
 
       // 4. Clear cart and redirect
       clearCart();
@@ -320,6 +318,13 @@ export default function CheckoutPage() {
       );
     } catch (err: any) {
       console.error('Error submitting order:', err);
+      // Even in fallback demo mode, deduct stock locally so inventory diminishes accurately
+      await deductStock(
+        cart.map((item) => ({
+          productId: item.product.id,
+          quantity: item.quantity,
+        }))
+      );
       const demoOrderId = 'ord_' + Math.random().toString(36).substring(2, 9);
       clearCart();
       router.push(

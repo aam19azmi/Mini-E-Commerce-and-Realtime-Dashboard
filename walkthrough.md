@@ -1,51 +1,83 @@
-# Walkthrough: Advanced Logistics, 2.5% Admin Fee, and Multi-Payment Architecture
+# Walkthrough: Resilient Stock Decrement, Robust Cascade Reset & Agent Rules Upgrade
 
-We have implemented the new features requested:
-1. **2.5% Administrative Fee (Biaya Layanan)** calculated dynamically and displayed across the entire order lifecycle.
-2. **Interactive Map Location Pinning & Multi-Courier Shipping Engine** (JNE, J&T, SPX, SiCepat, Instant) with real-time distance-based tariff estimation.
-3. **0% Fee Direct QRIS & Bank Transfer Payment Proof Upload & Verification System**.
+## 📌 Summary of Completed Work
+We diagnosed and resolved the root causes of the **Stock Level Not Decreasing** and **Data Reset Failing** issues, established a unified single-source-of-truth product catalog with deterministic standard UUIDs, implemented a dual-layer cloud/local stock management engine with real-time WebSocket subscriptions, and upgraded `.agents/rules/AGENTS.md` with an integrated **Multi-Disciplinary Cognitive Matrix** and a mandatory **Autonomous QA & Audit Gatekeeper**.
 
 ---
 
-## 🚀 What Changed & Tested
+## 🛠️ Changes Implemented
 
-### 1. 2.5% Administrative Fee Calculation
-- Implemented `admin_fee = Math.round(cartTotal * 0.025)`.
-- Calculated and itemized in:
-  - **Checkout Form & Summary Sidebar**
-  - **Order Confirmation Receipt (`/order-success/[id]`)**
-  - **Official Corporate Tax Invoice (`/invoice/[id]`)**
-  - **Admin Real-time Dashboard (`/admin/dashboard`)**
+### 1. Unified Deterministic Default Catalog
+- Created [`src/lib/defaultCatalog.ts`](file:///c:/Users/LENOVO/Documents/Mini%20E-Commerce%20and%20Realtime%20Dashboard/src/lib/defaultCatalog.ts):
+  - Defined all 6 flagship products using deterministic UUIDs (`00000000-0000-4000-8000-000000000001` through `...0006`).
+  - Standardized starter demonstration orders with matching relational `order_items`.
 
-### 2. Interactive Map Geolocation & Multi-Courier Logistics
-- **[New Component] `src/components/MapLocationPicker.tsx`**:
-  - OpenStreetMap & Leaflet-powered coordinate visualizer.
-  - One-click **"Use My Current GPS"** button via HTML5 Geolocation API.
-  - Real-time Haversine distance calculator measuring distance from NovaStore Jakarta Central Hub.
-- **Integrated Courier Options**:
-  - **JNE Express (Reguler)**: Rp 10.000 base + Rp 300/km (ETA 2-3 Days)
-  - **J&T Express (EZ Standard)**: Rp 11.000 base + Rp 320/km (ETA 1-2 Days)
-  - **Shopee Xpress (SPX Eco)**: Rp 9.000 base + Rp 280/km (ETA 2-4 Days)
-  - **SiCepat (BEST Express)**: Rp 12.000 base + Rp 350/km (ETA 1-2 Days)
-  - **Instant Courier (GoSend/GrabExpress)**: Rp 18.000 base + Rp 1.200/km (ETA 2-4 Hours)
+### 2. Dual-Layer Stock & Cascade Reset Manager
+- Created [`src/lib/stockManager.ts`](file:///c:/Users/LENOVO/Documents/Mini%20E-Commerce%20and%20Realtime%20Dashboard/src/lib/stockManager.ts):
+  - `deductStock(items)`: Deducts stock on Supabase (via direct update and RPC), updates `localStorage` overrides, and emits `novastore:stock_updated` window events.
+  - `restoreStock(items)`: Automatically restitute stock on order cancellation.
+  - `clearAllOrders()`: Deletes `order_items` $\rightarrow$ `orders` in strict relational order with full error validation.
+  - `resetDatabaseToPristine()`: Executes cascade reset (`order_items` $\rightarrow$ `orders` $\rightarrow$ `products`), re-seeds pristine catalog & starter orders, and clears local caches without foreign key restriction errors.
+  - `subscribeToStockUpdates(onUpdate)`: Subscribes to the Supabase Realtime `products` table channel and window custom events.
 
-### 3. Payment Methods: Direct QRIS & Bank Transfer Proof
-- **Instant QRIS (0% Transaction Fee)**:
-  - Customers scan directly with BCA Mobile, Livin, GoPay, OVO, Dana, ShopeePay.
-  - Zero intermediary deductions (0% MDR direct-to-seller).
-- **Bank Transfer + Proof Upload**:
-  - Displays destination bank accounts (BCA, Mandiri).
-  - Customers upload payment receipt image screenshots with live preview.
-- **Cash on Delivery (COD)**:
-  - Available alternative payment method.
-- **Admin Verification Center**:
-  - Live orders table displays courier badge & `[📎 Receipt Attached]` badge.
-  - Clicking on an order opens the inspection modal with the receipt preview.
-  - 1-click **"Approve Payment"** (moves order to `processing`) or **"Reject"** (`cancelled`).
-  - Full-resolution receipt lightbox modal.
-  - **"QRIS & Bank Setup"** modal for each seller to configure their payout accounts.
+### 3. Storefront & Checkout Real-time Inventory Reactivity
+- Modified [`src/app/page.tsx`](file:///c:/Users/LENOVO/Documents/Mini%20E-Commerce%20and%20Realtime%20Dashboard/src/app/page.tsx):
+  - Replaced divergent static fallback items with `reconcileProducts(DEFAULT_CATALOG_PRODUCTS)`.
+  - Subscribed to real-time `products` WebSocket updates, making inventory count changes and stock badge alerts reactive in real-time across all open tabs.
+- Modified [`src/app/checkout/page.tsx`](file:///c:/Users/LENOVO/Documents/Mini%20E-Commerce%20and%20Realtime%20Dashboard/src/app/checkout/page.tsx):
+  - Integrated `deductStock()` into order submissions (both primary cloud flow and offline demo fallback).
+
+### 4. Admin Dashboard Bi-directional Sync & Reset Upgrade
+- Modified [`src/app/admin/dashboard/page.tsx`](file:///c:/Users/LENOVO/Documents/Mini%20E-Commerce%20and%20Realtime%20Dashboard/src/app/admin/dashboard/page.tsx):
+  - Added real-time subscription for `products` table alongside `orders`.
+  - Integrated `restoreStock()` upon order cancellation and `deductStock()` upon un-cancelling.
+  - Replaced reset handlers with `clearAllOrders()` and `resetDatabaseToPristine()`.
+
+### 5. PostgreSQL Schema & Stored Procedures
+- Modified [`supabase/reset_database.sql`](file:///c:/Users/LENOVO/Documents/Mini%20E-Commerce%20and%20Realtime%20Dashboard/supabase/reset_database.sql) & [`supabase/schema.sql`](file:///c:/Users/LENOVO/Documents/Mini%20E-Commerce%20and%20Realtime%20Dashboard/supabase/schema.sql):
+  - Added deterministic standard UUIDs to table seeders.
+  - Created `deduct_product_stock(UUID, INT)` and `reset_to_pristine_catalog()` stored procedures with `SECURITY DEFINER`.
+
+### 6. Upgraded Agent Rules & Governance
+- Modified [`.agents/rules/AGENTS.md`](file:///c:/Users/LENOVO/Documents/Mini%20E-Commerce%20and%20Realtime%20Dashboard/.agents/rules/AGENTS.md):
+  - Formulated the **Multi-Disciplinary Cognitive Matrix**:
+    - *CTO & Lead Architect*: Schemas, RLS, Realtime Channels, Next.js 15.
+    - *Financial Systems & Flowcash Specialist*: 2.5% fee arithmetic, customs compliance, QRIS verification, tax invoices.
+    - *Autonomous QA & System Auditor (Audit Function)*: Mandatory pre-delivery verification gatekeeper.
+  - Added the **Dual-Layer Resilience Protocol** and **Pre-Delivery Verification Checklist**.
+
+### 7. Documentation Directory Synchronization
+- Synchronized:
+  - [`docs/PRD_AND_ERD.md`](file:///c:/Users/LENOVO/Documents/Mini%20E-Commerce%20and%20Realtime%20Dashboard/docs/PRD_AND_ERD.md)
+  - [`docs/SYSTEM_FLOWCHART.md`](file:///c:/Users/LENOVO/Documents/Mini%20E-Commerce%20and%20Realtime%20Dashboard/docs/SYSTEM_FLOWCHART.md)
+  - [`docs/AI_PROMPT_LOG.md`](file:///c:/Users/LENOVO/Documents/Mini%20E-Commerce%20and%20Realtime%20Dashboard/docs/AI_PROMPT_LOG.md)
+  - [`docs/User Documentation-Azmi.html`](file:///c:/Users/LENOVO/Documents/Mini%20E-Commerce%20and%20Realtime%20Dashboard/docs/User%20Documentation-Azmi.html)
+  - [`README.md`](file:///c:/Users/LENOVO/Documents/Mini%20E-Commerce%20and%20Realtime%20Dashboard/README.md)
+  - [`task.md`](file:///c:/Users/LENOVO/Documents/Mini%20E-Commerce%20and%20Realtime%20Dashboard/task.md)
 
 ---
 
-## 🧪 Build & Verification
-- `npm run build`: Compiled with 0 TypeScript/Lint errors.
+## 🔬 Verification Results
+
+### 1. Build Verification
+- Command: `npm run build`
+- Outcome: **100% Compiled with 0 TypeScript and 0 Turbopack errors.**
+- Routes verified:
+  - `○ /` (Storefront)
+  - `○ /admin/dashboard` (Real-Time Admin Command Center)
+  - `○ /admin/login` (Admin Authentication Portal)
+  - `○ /checkout` (Guest Checkout with Map & Logistics)
+  - `ƒ /invoice/[id]` (Corporate Tax Invoice Route)
+  - `ƒ /order-success/[id]` (Order Confirmation & Confetti Celebration)
+
+### 2. Functional Test Verification Matrix
+
+| Flow / Feature | Expected Behavior | Verification Status |
+| :--- | :--- | :---: |
+| **Order Placement Stock Decrement** | Submitting an order decrements product stock in cloud database and local fallback caches. | ✅ PASS |
+| **Storefront Stock Reactivity** | Storefront cards immediately update stock badge without full page reload. | ✅ PASS |
+| **Order Cancellation Restitution** | Marking order as `cancelled` restores item quantities to stock. | ✅ PASS |
+| **Order Reactivation Re-deduction** | Moving order from `cancelled` back to `processing` re-deducts stock. | ✅ PASS |
+| **Mode 1 Reset (Clear Orders)** | Deletes `order_items` and `orders` to 0 records while preserving products. | ✅ PASS |
+| **Mode 2 Reset (Pristine Restore)** | Resets all tables in cascade order and restores 6 flagship products + 3 starter orders. | ✅ PASS |
+| **Admin Zero-Flash Guard** | Unauthenticated users cannot view dashboard or order data before login. | ✅ PASS |
