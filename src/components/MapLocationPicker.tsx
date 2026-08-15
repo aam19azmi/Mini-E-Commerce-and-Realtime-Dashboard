@@ -288,8 +288,7 @@ export default function MapLocationPicker({
   };
 
   // Robust Search Engine (Dictionary + OpenStreetMap Fallback)
-  const handleSearchSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const executeSearch = async () => {
     const cleanQuery = searchQuery.trim().toLowerCase();
     if (!cleanQuery) return;
 
@@ -376,8 +375,8 @@ export default function MapLocationPicker({
         </button>
       </div>
 
-      {/* Search Address Bar */}
-      <form onSubmit={handleSearchSubmit} className="space-y-1.5">
+      {/* Search Address Input (No nested form to prevent page reloads) */}
+      <div className="space-y-1.5">
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
@@ -385,12 +384,24 @@ export default function MapLocationPicker({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Type city or district (e.g. Bandung, Surabaya, Medan, Dago, Bali)..."
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  executeSearch();
+                }
+              }}
+              placeholder="Type city or district (e.g. Bandung, Surabaya, Medan, Dago, Bali, New York)..."
               className="w-full rounded-xl border border-white/10 bg-slate-800/90 pl-9 pr-3.5 py-2 text-xs text-white placeholder-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
             />
           </div>
           <button
-            type="submit"
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              executeSearch();
+            }}
             disabled={locating}
             className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:brightness-110 active:scale-95 transition-all"
           >
@@ -415,7 +426,7 @@ export default function MapLocationPicker({
             <span>{searchFeedback.message}</span>
           </div>
         )}
-      </form>
+      </div>
 
       {/* Real Interactive Leaflet Map Container */}
       <div className="relative h-56 w-full overflow-hidden rounded-xl border border-cyan-500/30 bg-slate-950 shadow-inner">
