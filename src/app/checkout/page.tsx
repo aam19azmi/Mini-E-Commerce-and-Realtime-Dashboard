@@ -132,8 +132,17 @@ export default function CheckoutPage() {
     setDestinationLat(loc.lat);
     setDestinationLng(loc.lng);
     setDistanceKm(loc.distanceKm);
-    if (loc.addressText && !formData.address) {
-      setFormData((prev) => ({ ...prev, address: loc.addressText || '' }));
+    if (loc.addressText) {
+      setFormData((prev) => {
+        // Extract city from address if possible
+        const parts = (loc.addressText || '').split(',').map((p) => p.trim());
+        const suggestedCity = parts.length > 2 ? parts[parts.length - 3] || parts[parts.length - 2] : '';
+        return {
+          ...prev,
+          address: loc.addressText || prev.address,
+          city: prev.city || suggestedCity,
+        };
+      });
     }
   };
 
@@ -753,27 +762,57 @@ export default function CheckoutPage() {
 
               {/* Price Calculations */}
               <div className="mt-6 border-t border-white/10 pt-4 space-y-2.5 text-xs">
-                <div className="flex justify-between text-slate-400">
-                  <span>Product Subtotal</span>
-                  <span className="font-semibold text-white">{formatPrice(cartTotal)}</span>
-                </div>
-                <div className="flex justify-between text-slate-400">
-                  <span className="flex items-center gap-1.5">
-                    <span>Pajak PPN (11% Terhitung)</span>
-                    <span className="rounded bg-indigo-500/20 px-1.5 py-0.2 text-[9px] font-bold text-indigo-300">Termasuk</span>
-                  </span>
-                  <span className="font-semibold text-indigo-300">
-                    {formatPrice(Math.round(cartTotal - cartTotal / 1.11))}
-                  </span>
-                </div>
-                <div className="flex justify-between text-slate-400">
-                  <span>Courier Shipping ({selectedCourier.name})</span>
-                  <span className="font-semibold text-cyan-400">{formatPrice(shippingCost)}</span>
-                </div>
-                <div className="flex justify-between text-slate-400">
-                  <span>Biaya Layanan / Admin (2.5%)</span>
-                  <span className="font-semibold text-amber-300">{formatPrice(adminFee)}</span>
-                </div>
+                {distanceKm > 3800 ? (
+                  <>
+                    <div className="flex justify-between text-slate-400">
+                      <span>Subtotal Produk (DPP)</span>
+                      <span className="font-semibold text-white">{formatPrice(cartTotal)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-400">
+                      <span className="flex items-center gap-1.5">
+                        <span>PPN Ekspor (0% Cross-Border)</span>
+                        <span className="rounded bg-emerald-500/20 px-1.5 py-0.2 text-[9px] font-bold text-emerald-300">Zero-Rated</span>
+                      </span>
+                      <span className="font-semibold text-emerald-400">Rp 0 (Exempt)</span>
+                    </div>
+                    <div className="flex justify-between text-slate-400">
+                      <span>International Air Freight ({selectedCourier.name})</span>
+                      <span className="font-semibold text-cyan-400">{formatPrice(shippingCost)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-400">
+                      <span>Biaya Layanan / Admin (2.5%)</span>
+                      <span className="font-semibold text-amber-300">{formatPrice(adminFee)}</span>
+                    </div>
+                    <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-2 text-[10px] text-amber-300">
+                      📦 <strong>Customs Notice:</strong> DDU (Delivered Duty Unpaid). Destination country import duties/taxes are assessed upon flight arrival.
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-between text-slate-400">
+                      <span>Subtotal Produk (DPP)</span>
+                      <span className="font-semibold text-white">{formatPrice(Math.round(cartTotal / 1.11))}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-400">
+                      <span className="flex items-center gap-1.5">
+                        <span>PPN Pajak (11% Terhitung)</span>
+                        <span className="rounded bg-indigo-500/20 px-1.5 py-0.2 text-[9px] font-bold text-indigo-300">Termasuk</span>
+                      </span>
+                      <span className="font-semibold text-indigo-300">
+                        {formatPrice(Math.round(cartTotal - cartTotal / 1.11))}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-slate-400">
+                      <span>Ongkos Kirim ({selectedCourier.name})</span>
+                      <span className="font-semibold text-cyan-400">{formatPrice(shippingCost)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-400">
+                      <span>Biaya Layanan / Admin (2.5%)</span>
+                      <span className="font-semibold text-amber-300">{formatPrice(adminFee)}</span>
+                    </div>
+                  </>
+                )}
+
                 <div className="flex justify-between border-t border-white/10 pt-3 text-sm font-bold text-white">
                   <span>Grand Total</span>
                   <span className="text-base text-cyan-400">{formatPrice(grandTotal)}</span>
