@@ -812,7 +812,14 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex justify-between text-slate-400">
                       <span className="flex items-center gap-1.5">
-                        <span>PPN Ekspor (0% Cross-Border)</span>
+                        <span>Bea Keluar (Export Tariff ID)</span>
+                        <span className="rounded bg-emerald-500/20 px-1.5 py-0.2 text-[9px] font-bold text-emerald-300">0% Bebas</span>
+                      </span>
+                      <span className="font-semibold text-emerald-400">Rp 0 (Gratis)</span>
+                    </div>
+                    <div className="flex justify-between text-slate-400">
+                      <span className="flex items-center gap-1.5">
+                        <span>PPN Ekspor (VAT 0%)</span>
                         <span className="rounded bg-emerald-500/20 px-1.5 py-0.2 text-[9px] font-bold text-emerald-300">Zero-Rated</span>
                       </span>
                       <span className="font-semibold text-emerald-400">Rp 0 (Exempt)</span>
@@ -825,8 +832,15 @@ export default function CheckoutPage() {
                       <span>Biaya Layanan / Admin (2.5%)</span>
                       <span className="font-semibold text-amber-300">{formatPrice(adminFee)}</span>
                     </div>
-                    <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-2 text-[10px] text-amber-300">
-                      📦 <strong>Customs Notice:</strong> DDU (Delivered Duty Unpaid). Destination country import duties/taxes are assessed upon flight arrival.
+                    <div className="flex justify-between text-slate-400">
+                      <span className="flex items-center gap-1.5">
+                        <span>Bea Cukai Impor Negara Tujuan</span>
+                        <span className="rounded bg-cyan-500/20 px-1.5 py-0.2 text-[9px] font-bold text-cyan-300">DDU</span>
+                      </span>
+                      <span className="font-semibold text-cyan-300">Saat Tiba / De Minimis</span>
+                    </div>
+                    <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-2.5 text-[10px] text-amber-300 leading-relaxed">
+                      🏛️ <strong>Regulasi Kepabeanan (Bea Cukai):</strong> Sesuai PMK No. 199 &amp; WTO, pengiriman keluar negeri dibebaskan dari Bea Keluar Indonesia (0%). Bea masuk &amp; pajak impor negara tujuan diatur oleh otoritas kepabeanan setempat (DDU/De Minimis).
                     </div>
                   </>
                 ) : (
