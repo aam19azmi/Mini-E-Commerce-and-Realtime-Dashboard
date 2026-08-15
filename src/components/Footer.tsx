@@ -148,43 +148,6 @@ export default function Footer() {
               </ol>
             </div>
           </div>
-
-          {/* Col 4: Quick Navigation & Admin (2 cols) */}
-          <div className="lg:col-span-2 space-y-3">
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider">
-              Quick Links
-            </h4>
-            <ul className="space-y-2 text-xs">
-              <li>
-                <Link href="/" className="hover:text-cyan-400 transition-colors">
-                  Product Catalog
-                </Link>
-              </li>
-              <li>
-                <Link href="/checkout" className="hover:text-cyan-400 transition-colors">
-                  Fast Guest Checkout
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/admin/dashboard"
-                  className="inline-flex items-center gap-1.5 font-bold text-indigo-400 hover:text-indigo-300 transition-colors"
-                >
-                  <Lock className="h-3 w-3" />
-                  <span>Admin Dashboard</span>
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/admin/login"
-                  className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-300 transition-colors"
-                >
-                  <span>Staff Portal</span>
-                  <ExternalLink className="h-3 w-3" />
-                </Link>
-              </li>
-            </ul>
-          </div>
         </div>
 
         {/* Partners & Payment Method Badges */}
