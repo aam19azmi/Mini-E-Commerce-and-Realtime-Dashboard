@@ -23,9 +23,11 @@
    - Real-time live orders and inventory monitor powered by Supabase PostgreSQL WebSockets.
    - Interactive financial analytics charts (Revenue trends, Order status distribution, AOV).
    - Payment proof inspection center with full-resolution zoom lightbox and 1-click Approve / Reject.
+   - **Itemized Order Inspection**: Deep relational inspection displaying purchased product thumbnails, SKU numbers, item names, categories, quantities, unit prices, and subtotals within the Order Details Modal.
    - Automated inventory stock management (dual-layer automatic decrement on purchase, automatic restitution on cancellation/customer returns).
    - Standardized Return Merchandise Authorization (RMA) SOP (Customer returns item to hub &rarr; Physical inspection &rarr; Status `Cancelled` &rarr; 100% refund).
-   - Full product catalog inventory CRUD (Create, Read, Update, Delete with modern confirmation modal).
+   - Full product catalog inventory CRUD (Create, Read, Update, Delete with modern confirmation modal and foreign key constraint protection).
+   - Official Printable Tax Invoices (`/invoice/[id]`) with dynamic itemized product tables, digital verification QR codes, and cashier officer attribution.
    - Storefront Corporate Footer with official Jakarta headquarters, customer care contacts, and logistics/payment partner badges.
    - 1-click CSV / Excel export for accounting reports.
    - Live order simulation tool for instant real-time demonstration.

@@ -141,3 +141,19 @@ flowchart LR
     C --> D["4. Admin Updates Status to 'Cancelled'<br/>(Product Stock Automatically Restored)"]
     D --> E["5. 100% Monetary Refund Issued<br/>(Within 24 Hours to Original Channel)"]
 ```
+
+---
+
+## 7. Itemized Product Details & Tax Invoice Inspection Flow
+
+```mermaid
+flowchart TD
+    OrderSelect["Admin selects Order in Live Dashboard<br/>or clicks View Details"] --> QueryItems["Query order_items JOIN products<br/>WHERE order_id = target_order_id"]
+    
+    QueryItems --> RenderModal["Render Interactive Modal with:<br/>- Product Thumbnail Images<br/>- Exact Product Names & Categories<br/>- Item SKU Badges<br/>- Purchased Quantities & Unit DPP<br/>- Individual Subtotals"]
+    
+    RenderModal --> InvoiceClick["Admin clicks 'View & Print Official Tax Invoice'"]
+    InvoiceClick --> InvoiceRoute["Route /invoice/[id]"]
+    
+    InvoiceRoute --> InvoiceGen["Generate Printable Corporate A4 Tax Invoice:<br/>1. Itemized Table (No, Description, Qty, DPP, Subtotal)<br/>2. Domestic 11% PPN / 0% Export Zero-Rated Tax<br/>3. 2.5% Platform Admin Fee & Shipping Tariff<br/>4. Scannable Digital QR Verification Code<br/>5. Authorized Cashier Officer Digital Stamp"]
+```

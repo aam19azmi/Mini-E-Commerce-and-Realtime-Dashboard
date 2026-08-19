@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
-import { supabase, Order } from '@/lib/supabase';
+import { supabase, Order, OrderItem } from '@/lib/supabase';
+import { DEFAULT_CATALOG_PRODUCTS, DEFAULT_STARTER_ORDERS } from '@/lib/defaultCatalog';
 import { formatPrice, formatDate } from '@/lib/utils';
 import {
   Printer,
@@ -32,6 +33,7 @@ export default function InvoicePage() {
   const shippingParam = searchParams.get('shipping');
 
   const [order, setOrder] = useState<Order | null>(null);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [originUrl, setOriginUrl] = useState('');
 
@@ -43,6 +45,7 @@ export default function InvoicePage() {
     async function loadOrder() {
       if (!orderId) return;
       try {
+        // 1. Fetch Order Record
         const { data, error } = await supabase
           .from('orders')
           .select('*')
@@ -65,6 +68,58 @@ export default function InvoicePage() {
             payment_method: 'qris',
             created_at: new Date().toISOString(),
           });
+        }
+
+        // 2. Fetch Itemized Order Items
+        const { data: itemsData, error: itemsError } = await supabase
+          .from('order_items')
+          .select('*, product:products(*)')
+          .eq('order_id', orderId);
+
+        if (!itemsError && itemsData && itemsData.length > 0) {
+          const enriched = itemsData.map((it: any) => ({
+            ...it,
+            product:
+              it.product ||
+              DEFAULT_CATALOG_PRODUCTS.find((p) => p.id === it.product_id),
+          }));
+          setOrderItems(enriched as OrderItem[]);
+        } else {
+          // Check starter orders or fallback
+          const starterMatch = DEFAULT_STARTER_ORDERS.find((o) => o.id === orderId);
+          if (starterMatch?.order_items && starterMatch.order_items.length > 0) {
+            const enriched = starterMatch.order_items.map((it) => ({
+              ...it,
+              product:
+                it.product ||
+                DEFAULT_CATALOG_PRODUCTS.find((p) => p.id === it.product_id),
+            }));
+            setOrderItems(enriched as OrderItem[]);
+          } else {
+            const fallbackProdSubtotal = Math.max(
+              0,
+              Number(totalParam || '0') -
+                Number(shippingParam || '15000') -
+                Number(adminFeeParam || '0')
+            );
+            setOrderItems([
+              {
+                product_id: 'pkg-default',
+                quantity: 1,
+                unit_price: fallbackProdSubtotal,
+                subtotal: fallbackProdSubtotal,
+                product: {
+                  id: 'pkg-default',
+                  name: 'Selected Marketplace Package Item',
+                  description: 'Official marketplace item package',
+                  price: fallbackProdSubtotal,
+                  stock: 1,
+                  image_url: '',
+                  category: 'Electronics',
+                },
+              },
+            ]);
+          }
         }
       } catch (e) {
         console.error(e);
@@ -234,22 +289,52 @@ export default function InvoicePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-800">
-              <tr>
-                <td className="py-4 font-bold text-slate-400">1</td>
-                <td className="py-4">
-                  <p className="font-bold text-slate-950 text-sm">Selected Multi-Product Package</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Order Ref: #{invoice.id} • Shipped via {invoice.shipping_courier || 'JNE Express'}
-                  </p>
-                </td>
-                <td className="py-4 text-center font-semibold">1</td>
-                <td className="py-4 text-right font-medium">
-                  {formatPrice(dppSubtotal)}
-                </td>
-                <td className="py-4 text-right font-bold text-slate-950">
-                  {formatPrice(dppSubtotal)}
-                </td>
-              </tr>
+              {orderItems.length === 0 ? (
+                <tr>
+                  <td className="py-4 font-bold text-slate-400">1</td>
+                  <td className="py-4">
+                    <p className="font-bold text-slate-950 text-sm">Selected Multi-Product Package</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Order Ref: #{invoice.id} • Shipped via {invoice.shipping_courier || 'JNE Express'}
+                    </p>
+                  </td>
+                  <td className="py-4 text-center font-semibold">1</td>
+                  <td className="py-4 text-right font-medium">
+                    {formatPrice(dppSubtotal)}
+                  </td>
+                  <td className="py-4 text-right font-bold text-slate-950">
+                    {formatPrice(productSubtotal)}
+                  </td>
+                </tr>
+              ) : (
+                orderItems.map((item, idx) => {
+                  const prodName = item.product?.name || `Product Package Item #${idx + 1}`;
+                  const prodCat = item.product?.category || 'Electronics';
+                  const qty = item.quantity || 1;
+                  const grossUnitPrice = Number(item.unit_price || 0);
+                  const itemGrossSubtotal = Number(item.subtotal || grossUnitPrice * qty);
+                  const unitDpp = Math.round(grossUnitPrice / 1.11);
+
+                  return (
+                    <tr key={item.id || idx}>
+                      <td className="py-3.5 font-bold text-slate-400">{idx + 1}</td>
+                      <td className="py-3.5">
+                        <p className="font-bold text-slate-950 text-sm">{prodName}</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Category: {prodCat} • SKU: {item.product_id ? item.product_id.slice(0, 8).toUpperCase() : `NOVA-${idx + 1}`}
+                        </p>
+                      </td>
+                      <td className="py-3.5 text-center font-semibold text-slate-900">{qty}</td>
+                      <td className="py-3.5 text-right font-medium text-slate-700">
+                        {formatPrice(unitDpp)}
+                      </td>
+                      <td className="py-3.5 text-right font-bold text-slate-950">
+                        {formatPrice(itemGrossSubtotal)}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

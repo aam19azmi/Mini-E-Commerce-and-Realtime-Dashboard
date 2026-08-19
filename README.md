@@ -46,9 +46,10 @@ NovaStore is an enterprise-grade digital commerce platform built for single-merc
 - **1-Click Database Reset Modes**:
   - **Mode 1 (Clear Orders)**: Cleanly deletes order items and orders to zero (0 orders) without affecting the product catalog.
   - **Mode 2 (Pristine Restore)**: Cascade reset restoring all 6 flagship products and 3 starter demo orders without foreign key constraint errors.
-- **Product Catalog CRUD**: Complete inventory management (Add, Edit, Delete with modern custom glassmorphism modal dialogs — zero native browser popups).
+- **Product Catalog CRUD**: Complete inventory management (Add, Edit, Delete with modern custom glassmorphism modal dialogs and `ON DELETE RESTRICT` database protection — zero native browser popups).
+- **Itemized Order Products Breakdown**: Complete transparency across Dashboard order details modals, printable tax invoices, and confirmation receipts showing exact product thumbnail images, names, SKUs, categories, quantities, unit prices (DPP), and individual subtotals.
 - **Financial Reporting**: 1-click CSV/Excel export for accounting and financial auditing.
-- **Official Commercial Tax Invoices**: Dedicated `/invoice/[id]` route featuring DPP + 11% PPN breakdown, courier dispatch info, administrative fees, and verified scannable QR verification code.
+- **Official Commercial Tax Invoices**: Dedicated `/invoice/[id]` route featuring DPP + 11% PPN breakdown, courier dispatch info, administrative fees, itemized product tables, and verified scannable QR verification code.
 
 ---
 

@@ -127,6 +127,21 @@ This document serves as the official AI Prompting Log for the **NovaStore Mini E
   6. Upgraded **`.agents/rules/AGENTS.md`**: Formalized the **Integrated Multi-Disciplinary Cognitive Matrix** (CTO/IT, Accounting/Flowcash, and Autonomous QA & Audit Gatekeeper) and established the **Pre-Delivery Verification Checklist**.
   7. Validated production build with `npm run build` — 100% compiled with 0 errors.
 
+---
 
-
-
+## 📅 Session 13: PostgreSQL RLS Policy Resolution, Pinterest Image Handling, & Itemized Product Breakdown
+- **User Prompts:**
+  1. *"Minta URL ... POST ... 401 Unauthorized ... Error kenapa? code: 42501 message: new row violates row-level security policy for table products. Why does this error when I want to add product at dashboard?"*
+  2. *"Then why when I add image url example: https://pin.it/3vnkJ5nlE from pinterest doesn't show the image just alt? Why?"*
+  3. *"As a seller how do we know what buyer was buy? Cause we only see invoice not chart at buyer or what buyer want to buys? And if we deleted the product or items at store product is that make broken order or something crash?"*
+  4. *"When I opened the invoice it's just the cost for the product, not the name of the product so how do I know what buyer wants to buy? If two products have the same cost what should I do?"*
+- **Root-Cause Architectural & UX Analysis:**
+  1. *RLS Error 42501*: PostgREST rejected product insertion because the live database lacked an `INSERT` policy for the `public`/`anon` role. Provided the comprehensive SQL policy fix (`CREATE POLICY "Admins can manage products" ON public.products FOR ALL TO public USING (true) WITH CHECK (true);`).
+  2. *Pinterest Image Alt*: Short-link `pin.it/...` serves HTML webpage content rather than raw image bytes (JPEG/PNG/WebP), causing browser decoding failure. Advised on obtaining direct CDN addresses (`i.pinimg.com/...jpg` or Unsplash/ImgBB).
+  3. *Relational Integrity on Product Deletion*: Explained that `order_items` foreign key `product_id REFERENCES products(id) ON DELETE RESTRICT` protects historical invoices from corruption and prevents broken orders.
+  4. *Itemized Products Breakdown*: The initial invoice/dashboard modal rendered monetary totals with a summary package line. Updated all views to fetch and render exact itemized product breakdowns.
+- **Key Engineering Actions:**
+  1. Updated `src/app/admin/dashboard/page.tsx`: Added `selectedOrderItems` state, integrated `order_items` query with joined `products`, and embedded an interactive **Ordered Products & Quantities Breakdown** with thumbnails, SKU badges, unit prices, and subtotals.
+  2. Updated `src/app/invoice/[id]/page.tsx`: Implemented dynamic table mapping over `orderItems` displaying item number, exact product name, category, SKU, quantity, unit price (DPP), and subtotal.
+  3. Updated `src/app/order-success/[id]/page.tsx`: Integrated `order_items` loader and rendered the purchased item breakdown on the customer's printable receipt.
+  4. Verified entire application with `npm run build` — 100% successful with 0 errors.

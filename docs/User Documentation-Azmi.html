@@ -446,8 +446,8 @@
     <li><strong>Map Location & Courier Selection:</strong> Customer opens checkout, pins GPS coordinates on the interactive map, and chooses their preferred courier.</li>
     <li><strong>Fee Calculation & Payment Upload:</strong> System calculates the 2.5% administrative fee. Customer scans QRIS or transfers to bank accounts, attaching a payment receipt screenshot.</li>
     <li><strong>Order Broadcast:</strong> Order is written to Supabase PostgreSQL, instantly triggering a real-time WebSocket push alert to the Admin Dashboard without page refresh.</li>
-    <li><strong>Admin Verification:</strong> Admin inspects the payment proof screenshot in full-resolution lightbox and 1-click approves the transaction.</li>
-    <li><strong>Fulfillment & Invoice:</strong> Order status transitions from <em>Pending</em> &rarr; <em>Processing</em> &rarr; <em>Completed</em>. Scannable corporate tax invoices are generated for customer verification.</li>
+    <li><strong>Admin Verification:</strong> Admin inspects the payment proof screenshot in full-resolution lightbox and views the itemized products breakdown (product thumbnails, SKUs, names, quantities, and subtotals) before 1-click approving the transaction.</li>
+    <li><strong>Fulfillment & Itemized Invoice:</strong> Order status transitions from <em>Pending</em> &rarr; <em>Processing</em> &rarr; <em>Completed</em>. Scannable corporate tax invoices with dynamic itemized product tables, digital QR verification codes, and cashier officer signatures are generated for customer and accounting verification.</li>
   </ol>
 
   <!-- 4. LOG PROMPTING AI -->

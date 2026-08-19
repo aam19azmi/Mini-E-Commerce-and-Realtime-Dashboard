@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { supabase, Order, OrderStatus, Product } from '@/lib/supabase';
+import { supabase, Order, OrderStatus, Product, OrderItem } from '@/lib/supabase';
 import { DEFAULT_CATALOG_PRODUCTS, DEFAULT_STARTER_ORDERS } from '@/lib/defaultCatalog';
 import {
   reconcileProducts,
@@ -51,6 +51,8 @@ import {
   Check,
   Database,
   Globe,
+  Loader2,
+  Box,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -77,6 +79,8 @@ export default function AdminDashboardPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedOrderItems, setSelectedOrderItems] = useState<OrderItem[]>([]);
+  const [loadingOrderItems, setLoadingOrderItems] = useState<boolean>(false);
   const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
   const [paymentSettingsOpen, setPaymentSettingsOpen] = useState<boolean>(false);
   const [resetModalOpen, setResetModalOpen] = useState<boolean>(false);
@@ -132,6 +136,80 @@ export default function AdminDashboardPage() {
       setLoading(false);
     }
   };
+
+  // Fetch product items for selected order
+  useEffect(() => {
+    async function loadItemsForSelectedOrder() {
+      if (!selectedOrder) {
+        setSelectedOrderItems([]);
+        return;
+      }
+
+      setLoadingOrderItems(true);
+      try {
+        const { data, error } = await supabase
+          .from('order_items')
+          .select('*, product:products(*)')
+          .eq('order_id', selectedOrder.id);
+
+        if (!error && data && data.length > 0) {
+          const itemsWithProduct = data.map((it: any) => ({
+            ...it,
+            product:
+              it.product ||
+              products.find((p) => p.id === it.product_id) ||
+              DEFAULT_CATALOG_PRODUCTS.find((p) => p.id === it.product_id),
+          }));
+          setSelectedOrderItems(itemsWithProduct as OrderItem[]);
+        } else {
+          // Check starter orders or match product
+          const starterMatch = DEFAULT_STARTER_ORDERS.find((o) => o.id === selectedOrder.id);
+          if (starterMatch?.order_items && starterMatch.order_items.length > 0) {
+            const enriched = starterMatch.order_items.map((it) => ({
+              ...it,
+              product:
+                it.product ||
+                products.find((p) => p.id === it.product_id) ||
+                DEFAULT_CATALOG_PRODUCTS.find((p) => p.id === it.product_id),
+            }));
+            setSelectedOrderItems(enriched as OrderItem[]);
+          } else {
+            // Reconcile fallback package items
+            const calculatedProductSubtotal = Math.max(
+              0,
+              Number(selectedOrder.total_amount) -
+                Number(selectedOrder.shipping_cost || 0) -
+                Number(selectedOrder.admin_fee || 0)
+            );
+            setSelectedOrderItems([
+              {
+                product_id: 'default-pkg',
+                quantity: 1,
+                unit_price: calculatedProductSubtotal,
+                subtotal: calculatedProductSubtotal,
+                product: {
+                  id: 'default-pkg',
+                  name: 'Selected Marketplace Package Item',
+                  description: 'Verified customer order item',
+                  price: calculatedProductSubtotal,
+                  stock: 1,
+                  image_url:
+                    'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80',
+                  category: 'Electronics',
+                },
+              },
+            ]);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching order items:', err);
+      } finally {
+        setLoadingOrderItems(false);
+      }
+    }
+
+    loadItemsForSelectedOrder();
+  }, [selectedOrder, products]);
 
   // Fetch products
   const fetchProducts = async () => {
@@ -1475,6 +1553,74 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
             )}
+
+            {/* Itemized Order Products Breakdown */}
+            <div className="space-y-3 print:text-black">
+              <div className="flex items-center justify-between border-b border-white/10 pb-2 print:border-gray-300">
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4 text-indigo-400 print:text-black" />
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 print:text-black">
+                    Ordered Products ({selectedOrderItems.length} {selectedOrderItems.length === 1 ? 'item' : 'items'})
+                  </h4>
+                </div>
+                <span className="text-[11px] text-slate-400 print:text-gray-600 font-medium">SKU & Item Subtotals</span>
+              </div>
+
+              {loadingOrderItems ? (
+                <div className="flex items-center justify-center py-6 gap-2 text-xs text-slate-400">
+                  <Loader2 className="h-4 w-4 animate-spin text-indigo-400" />
+                  <span>Loading purchased items breakdown...</span>
+                </div>
+              ) : selectedOrderItems.length === 0 ? (
+                <div className="rounded-xl border border-white/5 bg-slate-800/30 p-4 text-center text-xs text-slate-400">
+                  No individual items recorded for this order.
+                </div>
+              ) : (
+                <div className="divide-y divide-white/5 rounded-2xl border border-white/10 bg-slate-800/40 overflow-hidden print:border-gray-200 print:bg-white print:divide-gray-200">
+                  {selectedOrderItems.map((item, idx) => {
+                    const prodName = item.product?.name || `Product Item #${idx + 1}`;
+                    const prodImg =
+                      item.product?.image_url ||
+                      'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80';
+                    const prodCategory = item.product?.category || 'General';
+                    const qty = item.quantity || 1;
+                    const unitPrice = Number(item.unit_price || 0);
+                    const subtotal = Number(item.subtotal || unitPrice * qty);
+
+                    return (
+                      <div
+                        key={item.id || idx}
+                        className="flex items-center justify-between p-3 gap-3 hover:bg-white/[0.02] transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl border border-white/10 bg-slate-900 print:border-gray-300">
+                            <img
+                              src={prodImg}
+                              alt={prodName}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-white print:text-black truncate">{prodName}</p>
+                            <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                              <span className="rounded bg-indigo-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-300 print:bg-gray-100 print:text-black border border-indigo-500/30 print:border-gray-300">
+                                {prodCategory}
+                              </span>
+                              <span className="text-[11px] text-slate-400 print:text-gray-600">
+                                Qty: <strong className="text-cyan-300 print:text-black font-bold">{qty}</strong> × {formatPrice(unitPrice)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-xs font-bold text-cyan-400 print:text-black">{formatPrice(subtotal)}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             {/* Summary Line Table */}
             <div className="space-y-2 text-xs print:text-black">

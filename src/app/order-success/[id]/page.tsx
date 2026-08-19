@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import confetti from 'canvas-confetti';
+import { supabase, OrderItem } from '@/lib/supabase';
+import { DEFAULT_CATALOG_PRODUCTS, DEFAULT_STARTER_ORDERS } from '@/lib/defaultCatalog';
 import { formatPrice, formatDate } from '@/lib/utils';
 import {
   CheckCircle2,
@@ -19,6 +21,7 @@ import {
   Store,
   Truck,
   Percent,
+  Package,
 } from 'lucide-react';
 
 export default function OrderSuccessPage() {
@@ -35,6 +38,8 @@ export default function OrderSuccessPage() {
 
   const [copied, setCopied] = useState(false);
   const [currentDate, setCurrentDate] = useState('');
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [loadingItems, setLoadingItems] = useState(true);
 
   useEffect(() => {
     setCurrentDate(
@@ -71,7 +76,44 @@ export default function OrderSuccessPage() {
     };
 
     frame();
-  }, []);
+
+    async function loadOrderItems() {
+      if (!orderId) return;
+      try {
+        const { data, error } = await supabase
+          .from('order_items')
+          .select('*, product:products(*)')
+          .eq('order_id', orderId);
+
+        if (!error && data && data.length > 0) {
+          const enriched = data.map((it: any) => ({
+            ...it,
+            product:
+              it.product ||
+              DEFAULT_CATALOG_PRODUCTS.find((p) => p.id === it.product_id),
+          }));
+          setOrderItems(enriched as OrderItem[]);
+        } else {
+          const starterMatch = DEFAULT_STARTER_ORDERS.find((o) => o.id === orderId);
+          if (starterMatch?.order_items && starterMatch.order_items.length > 0) {
+            const enriched = starterMatch.order_items.map((it) => ({
+              ...it,
+              product:
+                it.product ||
+                DEFAULT_CATALOG_PRODUCTS.find((p) => p.id === it.product_id),
+            }));
+            setOrderItems(enriched as OrderItem[]);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching items for order-success:', err);
+      } finally {
+        setLoadingItems(false);
+      }
+    }
+
+    loadOrderItems();
+  }, [orderId]);
 
   const handleCopyId = () => {
     navigator.clipboard.writeText(orderId);
@@ -167,6 +209,63 @@ export default function OrderSuccessPage() {
             </div>
             <span className="font-semibold text-cyan-400 print:text-black">{formatPrice(shippingCost)}</span>
           </div>
+
+          {/* Itemized Order Products Breakdown */}
+          {orderItems.length > 0 && (
+            <div className="py-4 border-b border-white/10 space-y-3 print:border-gray-200">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-indigo-400 print:text-black" />
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 print:text-gray-700">
+                  Purchased Items ({orderItems.length})
+                </span>
+              </div>
+              <div className="divide-y divide-white/5 rounded-2xl border border-white/10 bg-slate-800/30 overflow-hidden print:border-gray-200 print:bg-white print:divide-gray-200">
+                {orderItems.map((item, idx) => {
+                  const prodName = item.product?.name || `Product Item #${idx + 1}`;
+                  const prodImg =
+                    item.product?.image_url ||
+                    'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80';
+                  const prodCategory = item.product?.category || 'General';
+                  const qty = item.quantity || 1;
+                  const unitPrice = Number(item.unit_price || 0);
+                  const subtotal = Number(item.subtotal || unitPrice * qty);
+
+                  return (
+                    <div
+                      key={item.id || idx}
+                      className="flex items-center justify-between p-3 gap-3 text-xs"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        {prodImg && (
+                          <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg border border-white/10 bg-slate-900 print:border-gray-300">
+                            <img
+                              src={prodImg}
+                              alt={prodName}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-bold text-white print:text-black truncate">{prodName}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="rounded bg-indigo-500/20 px-1.5 py-0.2 text-[10px] font-semibold text-indigo-300 print:bg-gray-100 print:text-black">
+                              {prodCategory}
+                            </span>
+                            <span className="text-[11px] text-slate-400 print:text-gray-600">
+                              Qty: <strong className="text-cyan-300 print:text-black font-bold">{qty}</strong> × {formatPrice(unitPrice)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <span className="font-bold text-cyan-400 print:text-black flex-shrink-0">
+                        {formatPrice(subtotal)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Calculations Summary */}
           <div className="pt-6 flex justify-end">
