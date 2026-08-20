@@ -48,8 +48,8 @@ NovaStore is an enterprise-grade digital commerce platform built for single-merc
   - **Mode 2 (Pristine Restore)**: Cascade reset restoring all 6 flagship products and 3 starter demo orders without foreign key constraint errors.
 - **Product Catalog CRUD**: Complete inventory management (Add, Edit, Delete with modern custom glassmorphism modal dialogs and `ON DELETE RESTRICT` database protection — zero native browser popups).
 - **Itemized Order Products Breakdown**: Complete transparency across Dashboard order details modals, printable tax invoices, and confirmation receipts showing exact product thumbnail images, names, SKUs, categories, quantities, unit prices (DPP), and individual subtotals.
-- **Multi-Dimensional Date & Time Order Filtering**: Granular filter toolbar supporting instant presets (Today, Yesterday, Last 24 Hours, Last 7 Days, Last 30 Days, This Month, All Time), custom datetime-local range pickers, 1-click ascending/descending timestamp sorting, active filter ribbons, and date-scoped CSV exports.
-- **Financial Reporting**: 1-click CSV/Excel export for accounting and financial auditing (automatically scoped to active date/time and status filters).
+- **Global Executive Date & Time Horizon & Analytics Synchronization**: Executive top-level time window control (All Time, Today, Yesterday, Last 24 Hours, Last 7 Days, Last 30 Days, This Month, Custom Range) that dynamically synchronizes Executive KPI summary cards, Recharts AreaCharts (Sales Revenue Stream), Status Mix Donut Charts, and Live Order Streams in real time.
+- **Financial Reporting**: 1-click CSV/Excel export for accounting and financial auditing (automatically scoped to the active global time horizon and status filters).
 - **Official Commercial Tax Invoices**: Dedicated `/invoice/[id]` route featuring DPP + 11% PPN breakdown, courier dispatch info, administrative fees, itemized product tables, and verified scannable QR verification code.
 
 ---

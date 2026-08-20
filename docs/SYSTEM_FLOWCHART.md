@@ -160,31 +160,24 @@ flowchart TD
 
 ---
 
-## 8. Multi-Dimensional Live Order Filter & Chronological Sorting Architecture
+## 8. Global Dashboard Time Horizon & Multi-Dimensional Analytics Flowchart
 
 ```mermaid
 flowchart TD
-    OrdersIn["Live Supabase Orders Stream / Starter Catalog Orders"] --> FilterEngine{"Multi-Dimensional Filter Engine"}
+    OrdersIn["Live Supabase Orders Stream / Starter Catalog Orders"] --> GlobalDateFilter{"Global Time Horizon Filter<br/>(Today | Yesterday | 24h | 7d | 30d | Month | Custom | All Time)"}
     
-    subgraph Filters["Active Filter Criteria"]
-        F1["Status Filter:<br/>All | Pending | Processing | Completed | Cancelled"]
-        F2["Date Preset Filter:<br/>All Time | Today | Yesterday | Last 24h | Last 7d | Last 30d | This Month"]
-        F3["Custom Datetime Range:<br/>Start DateTime (From) & End DateTime (To)"]
-        F4["Customer Search Query:<br/>Name / Email / Order UUID substring"]
+    GlobalDateFilter --> PeriodOrders["periodOrders Stream<br/>(Orders Matching Active Window)"]
+    
+    subgraph Cascade["Executive Dashboard Cascade"]
+        KPICards["1. Executive KPI Metrics<br/>- Total Period Revenue (IDR)<br/>- Order Count in Period<br/>- Average Order Value (AOV)<br/>- Period Fulfillment Rate (%)"]
+        Charts["2. Recharts Visual Analytics<br/>- Sales Revenue Stream (AreaChart)<br/>- Order Status Mix (Donut PieChart)"]
+        TableFeed["3. Live Transactions Stream<br/>- Status Tabs Filter (Counts)<br/>- Search Query (Name/Email/UUID)<br/>- Chronological Sorter (ASC/DESC)"]
+        CSVFeed["4. 1-Click CSV Accounting Export<br/>- Scoped to active time horizon"]
     end
     
-    F1 --> FilterEngine
-    F2 --> FilterEngine
-    F3 --> FilterEngine
-    F4 --> FilterEngine
-    
-    FilterEngine --> Sorter{"Chronological Sorter"}
-    Sorter -->|"sortOrder = 'desc'"| S1["Newest Orders First (created_at DESC)"]
-    Sorter -->|"sortOrder = 'asc'"| S2["Oldest Orders First (created_at ASC)"]
-    
-    S1 --> Output["Filtered & Sorted Orders Stream"]
-    S2 --> Output
-    
-    Output --> UI["1. Live Transactions Table Rendering<br/>2. Dynamic Active Filter Badges & Counter Ribbon<br/>3. Filtered Volume & Sales Metrics<br/>4. Date-Scoped CSV / Excel Accounting Export"]
+    PeriodOrders --> KPICards
+    PeriodOrders --> Charts
+    PeriodOrders --> TableFeed
+    PeriodOrders --> CSVFeed
 ```
 

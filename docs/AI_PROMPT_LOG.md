@@ -162,3 +162,19 @@ This document serves as the official AI Prompting Log for the **NovaStore Mini E
   5. Updated and synchronized documentation across `docs/PRD_AND_ERD.md`, `docs/SYSTEM_FLOWCHART.md`, `docs/AI_PROMPT_LOG.md`, `docs/User Documentation-Azmi.html`, and `README.md`.
   6. Verified production build with `npm run build` — 100% successful with 0 errors and 0 lint warnings.
 
+---
+
+## 📅 Session 15: Global Dashboard Date & Time Horizon & Analytics Synchronization
+- **User Prompt:** *"If for all admin dashboard what we usually filter date&time use? Can we add date&time filter for all dashboard admin?"*
+- **Architectural & Design Considerations:**
+  1. *Executive Industry Pattern (Stripe/Shopify)*: Elevated the Date & Time filter from a local table filter into a **Global Dashboard Executive Horizon** controlling all dashboard metrics and charts.
+  2. *Period Cascade (`periodOrders`)*: Computed unified `periodOrders` from which Executive KPI summary cards (Total Revenue, Order Volume, AOV, Fulfillment Rate) and Recharts visual analytics (Sales Revenue Stream AreaChart & Order Status Mix Donut Chart) dynamically recalculate.
+  3. *Table & Drill-Down Alignment*: The Live Orders table lists transactions in the selected horizon with instant secondary filtering by status tabs, customer search, and chronological sorting.
+- **Key Engineering Actions:**
+  1. Positioned the **Global Dashboard Time Horizon Bar** above the KPI cards with rapid presets (All Time, Today, Yesterday, Last 24h, Last 7d, Last 30d, This Month, Custom Range), native dark-mode datetime pickers, and period metrics ribbon.
+  2. Derived `totalRevenue`, `totalOrders`, `completedOrders`, `pendingOrders`, `averageOrderValue`, `fulfillmentRate`, `chartData`, and `statusPieData` strictly from `periodOrders`.
+  3. Streamlined Live Transactions table toolbar with period-scoped status counts, search, and sorting.
+  4. Synchronized all documentation across `docs/PRD_AND_ERD.md`, `docs/SYSTEM_FLOWCHART.md`, `docs/AI_PROMPT_LOG.md`, `docs/User Documentation-Azmi.html`, and `README.md`.
+  5. Verified production build with `npm run build` — 100% successful with 0 errors and 0 lint warnings.
+
+

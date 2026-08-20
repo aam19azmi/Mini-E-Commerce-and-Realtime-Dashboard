@@ -788,39 +788,12 @@ export default function AdminDashboardPage() {
   };
 
   // ==========================================
-  // SINGLE MERCHANT STORE OPERATIONS
+  // SINGLE MERCHANT STORE OPERATIONS & GLOBAL HORIZON
   // ==========================================
   const displayedProducts = products;
   const storeOrders = orders;
 
-  // Metrics calculated across store operations
-  const totalRevenue = storeOrders.reduce(
-    (sum, o) => sum + (o.status !== 'cancelled' ? Number(o.total_amount) : 0),
-    0
-  );
-  const totalOrders = storeOrders.length;
-  const completedOrders = storeOrders.filter((o) => o.status === 'completed').length;
-  const pendingOrders = storeOrders.filter((o) => o.status === 'pending').length;
-  const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-
-  // Chart Data for Store Operations
-  const chartData = storeOrders
-    .slice()
-    .reverse()
-    .map((o, idx) => ({
-      name: `Order #${idx + 1}`,
-      amount: Number(o.total_amount),
-      customer: o.customer_name,
-    }));
-
-  const statusPieData = [
-    { name: 'Completed', value: storeOrders.filter((o) => o.status === 'completed').length, color: '#10b981' },
-    { name: 'Processing', value: storeOrders.filter((o) => o.status === 'processing').length, color: '#3b82f6' },
-    { name: 'Pending', value: storeOrders.filter((o) => o.status === 'pending').length, color: '#f59e0b' },
-    { name: 'Cancelled', value: storeOrders.filter((o) => o.status === 'cancelled').length, color: '#f43f5e' },
-  ].filter((item) => item.value > 0);
-
-  // Date & Time Filter Logic
+  // Global Date & Time Filter Logic
   const matchesDate = (createdAt?: string): boolean => {
     if (!createdAt) return true;
     const orderTime = new Date(createdAt).getTime();
@@ -871,15 +844,46 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const filteredOrders = storeOrders
+  // Orders scoped to the global active time horizon
+  const periodOrders = storeOrders.filter((order) => matchesDate(order.created_at));
+
+  // Executive KPI Metrics synchronized across active time horizon
+  const totalRevenue = periodOrders.reduce(
+    (sum, o) => sum + (o.status !== 'cancelled' ? Number(o.total_amount) : 0),
+    0
+  );
+  const totalOrders = periodOrders.length;
+  const completedOrders = periodOrders.filter((o) => o.status === 'completed').length;
+  const pendingOrders = periodOrders.filter((o) => o.status === 'pending').length;
+  const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+  const fulfillmentRate = totalOrders > 0 ? Math.round((completedOrders / totalOrders) * 100) : 0;
+
+  // Chart Data for Store Operations (scoped to active time horizon)
+  const chartData = periodOrders
+    .slice()
+    .reverse()
+    .map((o, idx) => ({
+      name: `Order #${idx + 1}`,
+      amount: Number(o.total_amount),
+      customer: o.customer_name,
+    }));
+
+  const statusPieData = [
+    { name: 'Completed', value: periodOrders.filter((o) => o.status === 'completed').length, color: '#10b981' },
+    { name: 'Processing', value: periodOrders.filter((o) => o.status === 'processing').length, color: '#3b82f6' },
+    { name: 'Pending', value: periodOrders.filter((o) => o.status === 'pending').length, color: '#f59e0b' },
+    { name: 'Cancelled', value: periodOrders.filter((o) => o.status === 'cancelled').length, color: '#f43f5e' },
+  ].filter((item) => item.value > 0);
+
+  // Live Orders Table Stream (Filtered by status and search, sorted chronologically)
+  const filteredOrders = periodOrders
     .filter((order) => {
       const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
       const matchesSearch =
         order.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.customer_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.id.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesTime = matchesDate(order.created_at);
-      return matchesStatus && matchesSearch && matchesTime;
+      return matchesStatus && matchesSearch;
     })
     .sort((a, b) => {
       const timeA = new Date(a.created_at || 0).getTime();
@@ -1075,6 +1079,161 @@ export default function AdminDashboardPage() {
         {/* TAB 1: ORDERS & ANALYTICS */}
         {activeTab === 'orders' && (
           <>
+            {/* Global Executive Date & Time Horizon Control Bar */}
+            <div className="mt-8 rounded-3xl border border-white/10 bg-slate-900/80 p-5 sm:p-6 backdrop-blur-xl shadow-xl">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                      <Calendar className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <h3 className="text-base font-bold text-white tracking-tight">
+                        Global Dashboard Time Horizon
+                      </h3>
+                      <p className="text-xs text-slate-400">
+                        Synchronizes executive KPI cards, sales revenue charts, and live order records
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Preset Buttons & Reset Action */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-1 rounded-2xl border border-white/10 bg-slate-950/60 p-1.5 text-xs">
+                    {[
+                      { id: 'all', label: 'All Time' },
+                      { id: 'today', label: 'Today' },
+                      { id: 'yesterday', label: 'Yesterday' },
+                      { id: 'last24h', label: 'Last 24h' },
+                      { id: 'last7d', label: 'Last 7 Days' },
+                      { id: 'last30d', label: 'Last 30 Days' },
+                      { id: 'thisMonth', label: 'This Month' },
+                      { id: 'custom', label: 'Custom Range' },
+                    ].map((preset) => {
+                      const isActive = datePreset === preset.id;
+                      return (
+                        <button
+                          key={preset.id}
+                          onClick={() => {
+                            setDatePreset(preset.id as DatePreset);
+                            if (preset.id === 'custom') {
+                              setShowCustomDatePicker(true);
+                            }
+                          }}
+                          className={`rounded-xl px-3 py-1.5 font-semibold transition-all ${
+                            isActive
+                              ? 'bg-indigo-600 text-white shadow-md'
+                              : 'text-slate-400 hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {datePreset !== 'all' && (
+                    <button
+                      onClick={() => {
+                        setDatePreset('all');
+                        setStartDate('');
+                        setEndDate('');
+                        setShowCustomDatePicker(false);
+                      }}
+                      className="flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 hover:text-white transition-all shadow-sm"
+                      title="Reset time horizon to all orders"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      <span>Reset Window</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Custom Date & Time Inputs (visible when custom preset active or expanded) */}
+              {(datePreset === 'custom' || showCustomDatePicker) && (
+                <div className="mt-4 pt-4 border-t border-white/10 flex flex-wrap items-center gap-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-400 font-medium flex items-center gap-1 text-[11px]">
+                      <Clock className="h-3 w-3 text-cyan-400" />
+                      <span>From:</span>
+                    </span>
+                    <input
+                      type="datetime-local"
+                      value={startDate}
+                      onChange={(e) => {
+                        setStartDate(e.target.value);
+                        if (datePreset !== 'custom') setDatePreset('custom');
+                      }}
+                      className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none [color-scheme:dark]"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-400 font-medium flex items-center gap-1 text-[11px]">
+                      <Clock className="h-3 w-3 text-cyan-400" />
+                      <span>To:</span>
+                    </span>
+                    <input
+                      type="datetime-local"
+                      value={endDate}
+                      onChange={(e) => {
+                        setEndDate(e.target.value);
+                        if (datePreset !== 'custom') setDatePreset('custom');
+                      }}
+                      className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none [color-scheme:dark]"
+                    />
+                  </div>
+
+                  {(startDate || endDate) && (
+                    <button
+                      onClick={() => {
+                        setStartDate('');
+                        setEndDate('');
+                      }}
+                      className="text-[11px] font-semibold text-rose-400 hover:text-rose-300 underline"
+                    >
+                      Clear Custom Dates
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Active Horizon Information Ribbon */}
+              <div className="mt-3.5 pt-3.5 border-t border-white/5 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2 text-slate-400">
+                  <span className="flex items-center gap-1.5 text-slate-300 font-medium">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>Horizon Active:</span>
+                    <strong className="text-white font-bold capitalize">
+                      {datePreset === 'custom'
+                        ? `${startDate ? formatDate(startDate) : 'Start'} → ${endDate ? formatDate(endDate) : 'Now'}`
+                        : datePreset.replace(/([A-Z])/g, ' $1')}
+                    </strong>
+                  </span>
+                  <span>•</span>
+                  <span>
+                    Orders in Window:{' '}
+                    <strong className="text-white font-bold">{periodOrders.length}</strong> of{' '}
+                    <strong className="text-slate-400">{storeOrders.length}</strong> total
+                  </span>
+                  <span>•</span>
+                  <span>
+                    Period Gross Sales:{' '}
+                    <strong className="text-emerald-400 font-bold">
+                      {formatPrice(totalRevenue)}
+                    </strong>
+                  </span>
+                </div>
+
+                <div className="text-[11px] text-slate-400">
+                  Fulfillment Rate in Window:{' '}
+                  <strong className="text-amber-400 font-bold">{fulfillmentRate}%</strong>
+                </div>
+              </div>
+            </div>
+
             {/* KPI Metrics Grid */}
             <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
               <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/90 to-slate-950/90 p-6 backdrop-blur-xl shadow-lg">
@@ -1088,7 +1247,7 @@ export default function AdminDashboardPage() {
                   <h3 className="text-2xl font-black text-white">{formatPrice(totalRevenue)}</h3>
                   <p className="mt-1 text-xs text-emerald-400 flex items-center gap-1">
                     <TrendingUp className="h-3.5 w-3.5" />
-                    <span>Real-time Gross Sales</span>
+                    <span>Sales in Active Window</span>
                   </p>
                 </div>
               </div>
@@ -1129,9 +1288,7 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
                 <div className="mt-4">
-                  <h3 className="text-2xl font-black text-white">
-                    {totalOrders > 0 ? Math.round((completedOrders / totalOrders) * 100) : 0}%
-                  </h3>
+                  <h3 className="text-2xl font-black text-white">{fulfillmentRate}%</h3>
                   <p className="mt-1 text-xs text-emerald-400">Success conversion</p>
                 </div>
               </div>
@@ -1143,7 +1300,9 @@ export default function AdminDashboardPage() {
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h3 className="text-lg font-bold text-white">Sales Revenue Stream</h3>
-                    <p className="text-xs text-slate-400">Live order values plotted in real-time</p>
+                    <p className="text-xs text-slate-400">
+                      Live order values plotted for active horizon ({periodOrders.length} transactions)
+                    </p>
                   </div>
                   <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-300">
                     Active Feed
@@ -1153,7 +1312,7 @@ export default function AdminDashboardPage() {
                 <div className="h-72 w-full">
                   {chartData.length === 0 ? (
                     <div className="flex h-full items-center justify-center text-xs text-slate-500">
-                      No order data available yet.
+                      No order data available for this time horizon.
                     </div>
                   ) : (
                     <ResponsiveContainer width="100%" height="100%">
@@ -1198,12 +1357,12 @@ export default function AdminDashboardPage() {
               <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 sm:p-8 backdrop-blur-xl shadow-xl lg:col-span-4">
                 <div className="mb-6">
                   <h3 className="text-lg font-bold text-white">Order Status Mix</h3>
-                  <p className="text-xs text-slate-400">Distribution by fulfillment phase</p>
+                  <p className="text-xs text-slate-400">Distribution in active time horizon</p>
                 </div>
 
                 <div className="h-72 w-full flex items-center justify-center">
                   {statusPieData.length === 0 ? (
-                    <div className="text-xs text-slate-500">No transaction data yet</div>
+                    <div className="text-xs text-slate-500">No transaction data in this horizon</div>
                   ) : (
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -1242,35 +1401,43 @@ export default function AdminDashboardPage() {
             {/* Live Orders Table */}
             <div className="mt-8 rounded-3xl border border-white/10 bg-slate-900/60 p-6 sm:p-8 backdrop-blur-xl shadow-xl">
               {/* Header & Primary Controls */}
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-4">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-6">
                 <div>
                   <h3 className="text-lg font-bold text-white flex items-center gap-2">
                     <span>Live Transactions & Orders</span>
                     <span className="rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 text-[11px] font-semibold">
-                      {filteredOrders.length} {filteredOrders.length === 1 ? 'Order' : 'Orders'}
+                      {filteredOrders.length} of {periodOrders.length} in Horizon
                     </span>
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Realtime synchronization • Multi-Courier, Payment Verification & Date Filtering
+                    Realtime synchronization • Multi-Courier, Payment Verification & Itemized Invoices
                   </p>
                 </div>
 
-                {/* Status Tabs & Search Bar */}
+                {/* Status Tabs, Search Bar & Sorter */}
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="flex rounded-xl border border-white/10 bg-slate-800/80 p-1 text-xs">
-                    {(['all', 'pending', 'processing', 'completed', 'cancelled'] as const).map((tab) => (
-                      <button
-                        key={tab}
-                        onClick={() => setStatusFilter(tab)}
-                        className={`rounded-lg px-3 py-1.5 font-semibold capitalize transition-all ${
-                          statusFilter === tab
-                            ? 'bg-indigo-600 text-white shadow-md'
-                            : 'text-slate-400 hover:text-slate-200'
-                        }`}
-                      >
-                        {tab}
-                      </button>
-                    ))}
+                    {(['all', 'pending', 'processing', 'completed', 'cancelled'] as const).map((tab) => {
+                      const count = tab === 'all' 
+                        ? periodOrders.length 
+                        : periodOrders.filter((o) => o.status === tab).length;
+                      return (
+                        <button
+                          key={tab}
+                          onClick={() => setStatusFilter(tab)}
+                          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-semibold capitalize transition-all ${
+                            statusFilter === tab
+                              ? 'bg-indigo-600 text-white shadow-md'
+                              : 'text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          <span>{tab}</span>
+                          <span className="rounded-full bg-white/10 px-1.5 py-0.2 text-[10px]">
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
 
                   <div className="relative min-w-[200px]">
@@ -1283,185 +1450,62 @@ export default function AdminDashboardPage() {
                       className="w-full rounded-xl border border-white/10 bg-slate-800/80 py-1.5 pl-9 pr-3 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
                     />
                   </div>
+
+                  {/* Sort Order Button */}
+                  <button
+                    onClick={() => setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
+                    className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-slate-800/80 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700 hover:text-white transition-all shadow-sm"
+                    title="Toggle chronological sorting"
+                  >
+                    <ArrowUpDown className="h-3.5 w-3.5 text-cyan-400" />
+                    <span>{sortOrder === 'desc' ? 'Newest First' : 'Oldest First'}</span>
+                  </button>
                 </div>
               </div>
 
-              {/* Date & Time Filter & Sorting Toolbar */}
-              <div className="mb-6 rounded-2xl border border-white/5 bg-slate-950/40 p-3 sm:p-4">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                  {/* Preset Pills */}
-                  <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                    <span className="text-slate-400 font-medium flex items-center gap-1 mr-1 text-[11px]">
-                      <Calendar className="h-3.5 w-3.5 text-indigo-400" />
-                      <span>Date Filter:</span>
-                    </span>
-
-                    {[
-                      { id: 'all', label: 'All Time' },
-                      { id: 'today', label: 'Today' },
-                      { id: 'yesterday', label: 'Yesterday' },
-                      { id: 'last24h', label: 'Last 24h' },
-                      { id: 'last7d', label: 'Last 7 Days' },
-                      { id: 'last30d', label: 'Last 30 Days' },
-                      { id: 'thisMonth', label: 'This Month' },
-                      { id: 'custom', label: 'Custom Range' },
-                    ].map((preset) => {
-                      const isActive = datePreset === preset.id;
-                      return (
-                        <button
-                          key={preset.id}
-                          onClick={() => {
-                            setDatePreset(preset.id as DatePreset);
-                            if (preset.id === 'custom') {
-                              setShowCustomDatePicker(true);
-                            }
-                          }}
-                          className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
-                            isActive
-                              ? 'bg-indigo-600 text-white border border-indigo-500/50 shadow-sm'
-                              : 'bg-slate-800/60 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-white/5'
-                          }`}
-                        >
-                          {preset.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Right Action Controls: Sort Order & Reset */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    {/* Sort Order Toggle */}
-                    <button
-                      onClick={() => setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
-                      className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-slate-800/70 px-2.5 py-1 text-xs font-semibold text-slate-300 hover:bg-slate-700 hover:text-white transition-all shadow-sm"
-                      title="Toggle Date & Time chronological sorting"
-                    >
-                      <ArrowUpDown className="h-3.5 w-3.5 text-cyan-400" />
-                      <span>
-                        Order: {sortOrder === 'desc' ? 'Newest First' : 'Oldest First'}
-                      </span>
-                    </button>
-
-                    {/* Reset All Filters Button */}
-                    {isAnyFilterActive && (
-                      <button
-                        onClick={handleResetFilters}
-                        className="flex items-center gap-1 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 hover:text-white transition-all shadow-sm"
-                        title="Reset all filters and search"
-                      >
-                        <RotateCcw className="h-3 w-3" />
-                        <span>Reset Filters</span>
-                      </button>
-                    )}
-                  </div>
+              {/* Active Filter Metrics Ribbon */}
+              <div className="mb-6 rounded-2xl border border-white/5 bg-slate-950/40 px-4 py-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2 text-slate-400">
+                  <span>
+                    Showing <strong className="text-white">{filteredOrders.length}</strong> matching orders
+                  </span>
+                  <span>•</span>
+                  <span>
+                    Filtered Volume:{' '}
+                    <strong className="text-emerald-400 font-bold">
+                      {formatPrice(filteredTotalRevenue)}
+                    </strong>
+                  </span>
                 </div>
 
-                {/* Custom Date & Time Inputs (visible when custom preset active or expanded) */}
-                {(datePreset === 'custom' || showCustomDatePicker) && (
-                  <div className="mt-3.5 pt-3.5 border-t border-white/5 flex flex-wrap items-center gap-3 text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-400 font-medium flex items-center gap-1 text-[11px]">
-                        <Clock className="h-3 w-3 text-cyan-400" />
-                        <span>From:</span>
-                      </span>
-                      <input
-                        type="datetime-local"
-                        value={startDate}
-                        onChange={(e) => {
-                          setStartDate(e.target.value);
-                          if (datePreset !== 'custom') setDatePreset('custom');
-                        }}
-                        className="rounded-xl border border-white/10 bg-slate-800/90 px-3 py-1 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none [color-scheme:dark]"
-                      />
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-400 font-medium flex items-center gap-1 text-[11px]">
-                        <Clock className="h-3 w-3 text-cyan-400" />
-                        <span>To:</span>
-                      </span>
-                      <input
-                        type="datetime-local"
-                        value={endDate}
-                        onChange={(e) => {
-                          setEndDate(e.target.value);
-                          if (datePreset !== 'custom') setDatePreset('custom');
-                        }}
-                        className="rounded-xl border border-white/10 bg-slate-800/90 px-3 py-1 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none [color-scheme:dark]"
-                      />
-                    </div>
-
-                    {(startDate || endDate) && (
-                      <button
-                        onClick={() => {
-                          setStartDate('');
-                          setEndDate('');
-                        }}
-                        className="text-[11px] font-semibold text-rose-400 hover:text-rose-300 underline"
-                      >
-                        Clear Custom Range
+                {/* Active Filter Badges */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {statusFilter !== 'all' && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-indigo-500/20 px-2 py-0.5 text-[10px] font-semibold text-indigo-300 border border-indigo-500/30">
+                      <span>Status: {statusFilter}</span>
+                      <button onClick={() => setStatusFilter('all')} className="hover:text-white">
+                        <X className="h-2.5 w-2.5" />
                       </button>
-                    )}
-                  </div>
-                )}
-
-                {/* Active Filter Metrics Ribbon */}
-                <div className="mt-3 pt-3 border-t border-white/5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <span>
-                      Showing <strong className="text-white">{filteredOrders.length}</strong> of{' '}
-                      <strong className="text-white">{storeOrders.length}</strong> transactions
                     </span>
-                    <span>•</span>
-                    <span>
-                      Filtered Sales:{' '}
-                      <strong className="text-emerald-400 font-bold">
-                        {formatPrice(filteredTotalRevenue)}
-                      </strong>
+                  )}
+
+                  {searchQuery.trim() && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300 border border-amber-500/30">
+                      <span>Search: &quot;{searchQuery}&quot;</span>
+                      <button onClick={() => setSearchQuery('')} className="hover:text-white">
+                        <X className="h-2.5 w-2.5" />
+                      </button>
                     </span>
-                  </div>
+                  )}
 
-                  {/* Active Filter Badges */}
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {statusFilter !== 'all' && (
-                      <span className="inline-flex items-center gap-1 rounded-md bg-indigo-500/20 px-2 py-0.5 text-[10px] font-semibold text-indigo-300 border border-indigo-500/30">
-                        <span>Status: {statusFilter}</span>
-                        <button onClick={() => setStatusFilter('all')} className="hover:text-white">
-                          <X className="h-2.5 w-2.5" />
-                        </button>
-                      </span>
-                    )}
-
-                    {datePreset !== 'all' && (
-                      <span className="inline-flex items-center gap-1 rounded-md bg-cyan-500/20 px-2 py-0.5 text-[10px] font-semibold text-cyan-300 border border-cyan-500/30">
-                        <span>
-                          Date:{' '}
-                          {datePreset === 'custom'
-                            ? `${startDate ? formatDate(startDate) : 'Start'} → ${endDate ? formatDate(endDate) : 'Now'}`
-                            : datePreset}
-                        </span>
-                        <button
-                          onClick={() => {
-                            setDatePreset('all');
-                            setStartDate('');
-                            setEndDate('');
-                          }}
-                          className="hover:text-white"
-                        >
-                          <X className="h-2.5 w-2.5" />
-                        </button>
-                      </span>
-                    )}
-
-                    {searchQuery.trim() && (
-                      <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300 border border-amber-500/30">
-                        <span>Search: &quot;{searchQuery}&quot;</span>
-                        <button onClick={() => setSearchQuery('')} className="hover:text-white">
-                          <X className="h-2.5 w-2.5" />
-                        </button>
-                      </span>
-                    )}
-                  </div>
+                  {isAnyFilterActive && (
+                    <button
+                      onClick={handleResetFilters}
+                      className="text-[10px] text-rose-400 hover:text-rose-300 font-semibold underline ml-1"
+                    >
+                      Clear All Filters
+                    </button>
+                  )}
                 </div>
               </div>
 

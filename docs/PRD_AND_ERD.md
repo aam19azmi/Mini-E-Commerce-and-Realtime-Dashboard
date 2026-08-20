@@ -23,7 +23,7 @@
    - Real-time live orders and inventory monitor powered by Supabase PostgreSQL WebSockets.
    - Interactive financial analytics charts (Revenue trends, Order status distribution, AOV).
    - Payment proof inspection center with full-resolution zoom lightbox and 1-click Approve / Reject.
-   - **Date & Time Order Filtering & Sorting**: Multi-dimensional transaction filter supporting quick presets (Today, Yesterday, Last 24 Hours, Last 7 Days, Last 30 Days, This Month, All Time), custom datetime range picker (`datetime-local`), and 1-click ascending/descending timestamp sorting.
+   - **Global Dashboard Time Horizon & Analytics Synchronization**: Executive top-level time window control (All Time, Today, Yesterday, Last 24 Hours, Last 7 Days, Last 30 Days, This Month, Custom Range) that synchronizes Executive KPI Cards, Sales Revenue Stream AreaCharts, Status Mix Donut Charts, and Live Order Streams in real time.
    - **Itemized Order Inspection**: Deep relational inspection displaying purchased product thumbnails, SKU numbers, item names, categories, quantities, unit prices, and subtotals within the Order Details Modal.
    - Automated inventory stock management (dual-layer automatic decrement on purchase, automatic restitution on cancellation/customer returns).
    - Standardized Return Merchandise Authorization (RMA) SOP (Customer returns item to hub &rarr; Physical inspection &rarr; Status `Cancelled` &rarr; 100% refund).
