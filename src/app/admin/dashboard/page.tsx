@@ -53,6 +53,14 @@ import {
   Globe,
   Loader2,
   Box,
+  Calendar,
+  CalendarRange,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  RotateCcw,
+  SlidersHorizontal,
+  ChevronDown,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -67,6 +75,8 @@ import {
   Legend,
 } from 'recharts';
 
+export type DatePreset = 'all' | 'today' | 'yesterday' | 'last24h' | 'last7d' | 'last30d' | 'thisMonth' | 'custom';
+
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'orders' | 'products'>('orders');
@@ -78,6 +88,14 @@ export default function AdminDashboardPage() {
   const [newOrderAlert, setNewOrderAlert] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Date & Time Filter & Sorting State
+  const [datePreset, setDatePreset] = useState<DatePreset>('all');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState<boolean>(false);
+
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedOrderItems, setSelectedOrderItems] = useState<OrderItem[]>([]);
   const [loadingOrderItems, setLoadingOrderItems] = useState<boolean>(false);
@@ -802,14 +820,94 @@ export default function AdminDashboardPage() {
     { name: 'Cancelled', value: storeOrders.filter((o) => o.status === 'cancelled').length, color: '#f43f5e' },
   ].filter((item) => item.value > 0);
 
-  const filteredOrders = storeOrders.filter((order) => {
-    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-    const matchesSearch =
-      order.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customer_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.id.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesSearch;
-  });
+  // Date & Time Filter Logic
+  const matchesDate = (createdAt?: string): boolean => {
+    if (!createdAt) return true;
+    const orderTime = new Date(createdAt).getTime();
+    if (isNaN(orderTime)) return true;
+
+    const now = new Date();
+
+    switch (datePreset) {
+      case 'today': {
+        const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).getTime();
+        const endToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+        return orderTime >= startToday && orderTime <= endToday;
+      }
+      case 'yesterday': {
+        const startYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0).getTime();
+        const endYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999).getTime();
+        return orderTime >= startYesterday && orderTime <= endYesterday;
+      }
+      case 'last24h':
+        return orderTime >= now.getTime() - 24 * 60 * 60 * 1000;
+      case 'last7d':
+        return orderTime >= now.getTime() - 7 * 24 * 60 * 60 * 1000;
+      case 'last30d':
+        return orderTime >= now.getTime() - 30 * 24 * 60 * 60 * 1000;
+      case 'thisMonth': {
+        const startMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0).getTime();
+        return orderTime >= startMonth;
+      }
+      case 'custom': {
+        let valid = true;
+        if (startDate) {
+          const startTimestamp = new Date(startDate).getTime();
+          if (!isNaN(startTimestamp)) {
+            valid = valid && orderTime >= startTimestamp;
+          }
+        }
+        if (endDate) {
+          const endTimestamp = new Date(endDate).getTime();
+          if (!isNaN(endTimestamp)) {
+            valid = valid && orderTime <= endTimestamp;
+          }
+        }
+        return valid;
+      }
+      case 'all':
+      default:
+        return true;
+    }
+  };
+
+  const filteredOrders = storeOrders
+    .filter((order) => {
+      const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+      const matchesSearch =
+        order.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.customer_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.id.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesTime = matchesDate(order.created_at);
+      return matchesStatus && matchesSearch && matchesTime;
+    })
+    .sort((a, b) => {
+      const timeA = new Date(a.created_at || 0).getTime();
+      const timeB = new Date(b.created_at || 0).getTime();
+      return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+    });
+
+  const filteredTotalRevenue = filteredOrders.reduce(
+    (sum, o) => sum + (o.status !== 'cancelled' ? Number(o.total_amount) : 0),
+    0
+  );
+
+  const isAnyFilterActive =
+    statusFilter !== 'all' ||
+    datePreset !== 'all' ||
+    Boolean(startDate) ||
+    Boolean(endDate) ||
+    Boolean(searchQuery.trim());
+
+  const handleResetFilters = () => {
+    setStatusFilter('all');
+    setDatePreset('all');
+    setStartDate('');
+    setEndDate('');
+    setSearchQuery('');
+    setSortOrder('desc');
+    setShowCustomDatePicker(false);
+  };
 
   if (isCheckingAuth || !isAuthorized) {
     return (
@@ -1143,17 +1241,24 @@ export default function AdminDashboardPage() {
 
             {/* Live Orders Table */}
             <div className="mt-8 rounded-3xl border border-white/10 bg-slate-900/60 p-6 sm:p-8 backdrop-blur-xl shadow-xl">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+              {/* Header & Primary Controls */}
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-4">
                 <div>
-                  <h3 className="text-lg font-bold text-white">Live Transactions & Orders</h3>
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <span>Live Transactions & Orders</span>
+                    <span className="rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 text-[11px] font-semibold">
+                      {filteredOrders.length} {filteredOrders.length === 1 ? 'Order' : 'Orders'}
+                    </span>
+                  </h3>
                   <p className="text-xs text-slate-400">
-                    Realtime synchronization • Multi-Courier & Payment Verification
+                    Realtime synchronization • Multi-Courier, Payment Verification & Date Filtering
                   </p>
                 </div>
 
+                {/* Status Tabs & Search Bar */}
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="flex rounded-xl border border-white/10 bg-slate-800/80 p-1 text-xs">
-                    {['all', 'pending', 'processing', 'completed', 'cancelled'].map((tab) => (
+                    {(['all', 'pending', 'processing', 'completed', 'cancelled'] as const).map((tab) => (
                       <button
                         key={tab}
                         onClick={() => setStatusFilter(tab)}
@@ -1181,6 +1286,185 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
+              {/* Date & Time Filter & Sorting Toolbar */}
+              <div className="mb-6 rounded-2xl border border-white/5 bg-slate-950/40 p-3 sm:p-4">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  {/* Preset Pills */}
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                    <span className="text-slate-400 font-medium flex items-center gap-1 mr-1 text-[11px]">
+                      <Calendar className="h-3.5 w-3.5 text-indigo-400" />
+                      <span>Date Filter:</span>
+                    </span>
+
+                    {[
+                      { id: 'all', label: 'All Time' },
+                      { id: 'today', label: 'Today' },
+                      { id: 'yesterday', label: 'Yesterday' },
+                      { id: 'last24h', label: 'Last 24h' },
+                      { id: 'last7d', label: 'Last 7 Days' },
+                      { id: 'last30d', label: 'Last 30 Days' },
+                      { id: 'thisMonth', label: 'This Month' },
+                      { id: 'custom', label: 'Custom Range' },
+                    ].map((preset) => {
+                      const isActive = datePreset === preset.id;
+                      return (
+                        <button
+                          key={preset.id}
+                          onClick={() => {
+                            setDatePreset(preset.id as DatePreset);
+                            if (preset.id === 'custom') {
+                              setShowCustomDatePicker(true);
+                            }
+                          }}
+                          className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                            isActive
+                              ? 'bg-indigo-600 text-white border border-indigo-500/50 shadow-sm'
+                              : 'bg-slate-800/60 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-white/5'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Right Action Controls: Sort Order & Reset */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Sort Order Toggle */}
+                    <button
+                      onClick={() => setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
+                      className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-slate-800/70 px-2.5 py-1 text-xs font-semibold text-slate-300 hover:bg-slate-700 hover:text-white transition-all shadow-sm"
+                      title="Toggle Date & Time chronological sorting"
+                    >
+                      <ArrowUpDown className="h-3.5 w-3.5 text-cyan-400" />
+                      <span>
+                        Order: {sortOrder === 'desc' ? 'Newest First' : 'Oldest First'}
+                      </span>
+                    </button>
+
+                    {/* Reset All Filters Button */}
+                    {isAnyFilterActive && (
+                      <button
+                        onClick={handleResetFilters}
+                        className="flex items-center gap-1 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 hover:text-white transition-all shadow-sm"
+                        title="Reset all filters and search"
+                      >
+                        <RotateCcw className="h-3 w-3" />
+                        <span>Reset Filters</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Custom Date & Time Inputs (visible when custom preset active or expanded) */}
+                {(datePreset === 'custom' || showCustomDatePicker) && (
+                  <div className="mt-3.5 pt-3.5 border-t border-white/5 flex flex-wrap items-center gap-3 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400 font-medium flex items-center gap-1 text-[11px]">
+                        <Clock className="h-3 w-3 text-cyan-400" />
+                        <span>From:</span>
+                      </span>
+                      <input
+                        type="datetime-local"
+                        value={startDate}
+                        onChange={(e) => {
+                          setStartDate(e.target.value);
+                          if (datePreset !== 'custom') setDatePreset('custom');
+                        }}
+                        className="rounded-xl border border-white/10 bg-slate-800/90 px-3 py-1 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none [color-scheme:dark]"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400 font-medium flex items-center gap-1 text-[11px]">
+                        <Clock className="h-3 w-3 text-cyan-400" />
+                        <span>To:</span>
+                      </span>
+                      <input
+                        type="datetime-local"
+                        value={endDate}
+                        onChange={(e) => {
+                          setEndDate(e.target.value);
+                          if (datePreset !== 'custom') setDatePreset('custom');
+                        }}
+                        className="rounded-xl border border-white/10 bg-slate-800/90 px-3 py-1 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none [color-scheme:dark]"
+                      />
+                    </div>
+
+                    {(startDate || endDate) && (
+                      <button
+                        onClick={() => {
+                          setStartDate('');
+                          setEndDate('');
+                        }}
+                        className="text-[11px] font-semibold text-rose-400 hover:text-rose-300 underline"
+                      >
+                        Clear Custom Range
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Active Filter Metrics Ribbon */}
+                <div className="mt-3 pt-3 border-t border-white/5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                  <div className="flex items-center gap-2 text-slate-400">
+                    <span>
+                      Showing <strong className="text-white">{filteredOrders.length}</strong> of{' '}
+                      <strong className="text-white">{storeOrders.length}</strong> transactions
+                    </span>
+                    <span>•</span>
+                    <span>
+                      Filtered Sales:{' '}
+                      <strong className="text-emerald-400 font-bold">
+                        {formatPrice(filteredTotalRevenue)}
+                      </strong>
+                    </span>
+                  </div>
+
+                  {/* Active Filter Badges */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {statusFilter !== 'all' && (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-indigo-500/20 px-2 py-0.5 text-[10px] font-semibold text-indigo-300 border border-indigo-500/30">
+                        <span>Status: {statusFilter}</span>
+                        <button onClick={() => setStatusFilter('all')} className="hover:text-white">
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      </span>
+                    )}
+
+                    {datePreset !== 'all' && (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-cyan-500/20 px-2 py-0.5 text-[10px] font-semibold text-cyan-300 border border-cyan-500/30">
+                        <span>
+                          Date:{' '}
+                          {datePreset === 'custom'
+                            ? `${startDate ? formatDate(startDate) : 'Start'} → ${endDate ? formatDate(endDate) : 'Now'}`
+                            : datePreset}
+                        </span>
+                        <button
+                          onClick={() => {
+                            setDatePreset('all');
+                            setStartDate('');
+                            setEndDate('');
+                          }}
+                          className="hover:text-white"
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      </span>
+                    )}
+
+                    {searchQuery.trim() && (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300 border border-amber-500/30">
+                        <span>Search: &quot;{searchQuery}&quot;</span>
+                        <button onClick={() => setSearchQuery('')} className="hover:text-white">
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="border-b border-white/10 text-slate-400">
@@ -1188,7 +1472,22 @@ export default function AdminDashboardPage() {
                       <th className="pb-3 font-semibold">Order ID</th>
                       <th className="pb-3 font-semibold">Customer</th>
                       <th className="pb-3 font-semibold">Courier Logistics</th>
-                      <th className="pb-3 font-semibold">Date & Time</th>
+                      <th
+                        onClick={() => setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
+                        className="pb-3 font-semibold cursor-pointer hover:text-white transition-colors group select-none"
+                        title="Click to toggle chronological sorting"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span>Date & Time</span>
+                          <span className="text-slate-400 group-hover:text-cyan-400 transition-colors">
+                            {sortOrder === 'desc' ? (
+                              <ArrowDown className="h-3 w-3 text-cyan-400" />
+                            ) : (
+                              <ArrowUp className="h-3 w-3 text-cyan-400" />
+                            )}
+                          </span>
+                        </div>
+                      </th>
                       <th className="pb-3 font-semibold">Payment & Proof</th>
                       <th className="pb-3 font-semibold">Total Amount</th>
                       <th className="pb-3 font-semibold">Status</th>

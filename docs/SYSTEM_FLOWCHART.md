@@ -157,3 +157,34 @@ flowchart TD
     
     InvoiceRoute --> InvoiceGen["Generate Printable Corporate A4 Tax Invoice:<br/>1. Itemized Table (No, Description, Qty, DPP, Subtotal)<br/>2. Domestic 11% PPN / 0% Export Zero-Rated Tax<br/>3. 2.5% Platform Admin Fee & Shipping Tariff<br/>4. Scannable Digital QR Verification Code<br/>5. Authorized Cashier Officer Digital Stamp"]
 ```
+
+---
+
+## 8. Multi-Dimensional Live Order Filter & Chronological Sorting Architecture
+
+```mermaid
+flowchart TD
+    OrdersIn["Live Supabase Orders Stream / Starter Catalog Orders"] --> FilterEngine{"Multi-Dimensional Filter Engine"}
+    
+    subgraph Filters["Active Filter Criteria"]
+        F1["Status Filter:<br/>All | Pending | Processing | Completed | Cancelled"]
+        F2["Date Preset Filter:<br/>All Time | Today | Yesterday | Last 24h | Last 7d | Last 30d | This Month"]
+        F3["Custom Datetime Range:<br/>Start DateTime (From) & End DateTime (To)"]
+        F4["Customer Search Query:<br/>Name / Email / Order UUID substring"]
+    end
+    
+    F1 --> FilterEngine
+    F2 --> FilterEngine
+    F3 --> FilterEngine
+    F4 --> FilterEngine
+    
+    FilterEngine --> Sorter{"Chronological Sorter"}
+    Sorter -->|"sortOrder = 'desc'"| S1["Newest Orders First (created_at DESC)"]
+    Sorter -->|"sortOrder = 'asc'"| S2["Oldest Orders First (created_at ASC)"]
+    
+    S1 --> Output["Filtered & Sorted Orders Stream"]
+    S2 --> Output
+    
+    Output --> UI["1. Live Transactions Table Rendering<br/>2. Dynamic Active Filter Badges & Counter Ribbon<br/>3. Filtered Volume & Sales Metrics<br/>4. Date-Scoped CSV / Excel Accounting Export"]
+```
+

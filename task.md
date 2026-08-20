@@ -1,24 +1,20 @@
 # Task Breakdown & Tracking (task.md)
 
-## 📌 Active & Completed Tasks
+## 📌 Active Tasks: Admin Dashboard Date & Time Order Filter
 
-### 1. Catalog & Stock Resiliency Engine
-- [x] **Unified Catalog Definition (`src/lib/defaultCatalog.ts`)**: Deterministic UUIDs and single source of truth for products & starter orders.
-- [x] **Stock & Reset Manager (`src/lib/stockManager.ts`)**: Cascade-safe database deletions, cloud-local dual-layer stock decrement, instant window broadcast events, and real-time subscription helpers.
-- [x] **Storefront Stock Reactivity (`src/app/page.tsx`)**: Subscribe to real-time `products` table changes and local broadcast events for instantaneous UI stock updates.
-- [x] **Checkout Decrement Integration (`src/app/checkout/page.tsx`)**: Integrate `stockManager.deductStock()` during guest order submissions.
-- [x] **Dashboard Dual-Channel & Reset Upgrade (`src/app/admin/dashboard/page.tsx`)**: Subscribing to both `orders` & `products`, implementing verified cascade reset routines, and stock restitution on order cancellation.
+### 1. Dashboard State & Filter Logic
+- [x] **Date & Time Filter States (`src/app/admin/dashboard/page.tsx`)**: Add `datePreset`, `startDate`, `endDate`, `sortOrder`, and `showCustomDatePicker`.
+- [x] **Multi-Dimensional Filter & Sort Engine**: Implement `matchesDate` logic supporting presets (Today, Yesterday, Last 24h, Last 7d, Last 30d, This Month, All Time) + Custom Datetime bounds + Asc/Desc sorting.
+- [x] **Toolbar UI & Custom DateTime Pickers**: Design premium glassmorphism filter controls with preset selectors, custom datetime-local inputs, active filter counter badge, and reset button.
+- [x] **Date-Scoped CSV Export Verification**: Ensure `handleExportCSV` exports the date-filtered orders with proper timestamp formatting.
 
-### 2. SQL Scripts & Stored Procedures
-- [x] **Deterministic Seeders & RPC (`supabase/schema.sql` & `supabase/reset_database.sql`)**: Include fixed UUIDs and atomic `deduct_product_stock` and `reset_to_pristine_catalog` PostgreSQL functions.
+### 2. Documentation Synchronization
+- [x] **PRD & ERD Synchronization (`docs/PRD_AND_ERD.md`)**: Document date & time filtering presets, custom datetime range, and sorting.
+- [x] **System Flowchart (`docs/SYSTEM_FLOWCHART.md`)**: Update transaction filter flow diagrams.
+- [x] **AI Prompt Log (`docs/AI_PROMPT_LOG.md`)**: Add prompt log for Date & Time filter implementation.
+- [x] **HTML Documentation (`docs/User Documentation-Azmi.html`)**: Update user guide with Date & Time filter instructions.
+- [x] **README (`README.md`)**: Update dashboard features list.
 
-### 3. Agent Rules & Governance
-- [x] **Agent Rules Upgrade (`.agents/rules/AGENTS.md`)**: Embed Multi-Disciplinary Cognitive Matrix (CTO/IT, Accounting/Flowcash, Autonomous QA & Audit Gatekeeper) and Pre-Delivery Verification Checklist.
-
-### 4. Documentation Synchronization
-- [x] **PRD & ERD Synchronization (`docs/PRD_AND_ERD.md`)**: Document deterministic UUIDs, cascade deletion ordering, and dual-layer stock synchronization.
-- [x] **System Flowchart (`docs/SYSTEM_FLOWCHART.md`)**: Update sequence diagrams for real-time stock sync and cascade reset flow.
-- [x] **AI Prompt Log (`docs/AI_PROMPT_LOG.md`)**: Log Session 12 prompt, technical root cause analysis, and resolution.
-- [x] **HTML Documentation (`docs/User Documentation-Azmi.html`)**: Update technical architecture, reset flow, and prompt logs.
-- [x] **Walkthrough (`walkthrough.md`)**: Provide complete verification evidence and before/after comparisons.
-- [x] **Production Build Check**: Execute `npm run build` with 0 errors.
+### 3. Verification & Quality Gate
+- [x] **Build Validation**: Execute `npm run build` with 0 errors and 0 lint failures.
+- [x] **Walkthrough Generation (`walkthrough.md`)**: Document changes and verification steps.

@@ -145,3 +145,20 @@ This document serves as the official AI Prompting Log for the **NovaStore Mini E
   2. Updated `src/app/invoice/[id]/page.tsx`: Implemented dynamic table mapping over `orderItems` displaying item number, exact product name, category, SKU, quantity, unit price (DPP), and subtotal.
   3. Updated `src/app/order-success/[id]/page.tsx`: Integrated `order_items` loader and rendered the purchased item breakdown on the customer's printable receipt.
   4. Verified entire application with `npm run build` — 100% successful with 0 errors.
+
+---
+
+## 📅 Session 14: Granular Date & Time Order Filter & Chronological Sorting in Admin Dashboard
+- **User Prompt:** *"Can you modify for admin dashboard? For add date&time filter order on live transaction & order"*
+- **Architectural & Design Considerations:**
+  1. *Multi-Dimensional Transaction Filtering*: Admins required both rapid chronological presets (Today, Yesterday, Last 24 Hours, Last 7 Days, Last 30 Days, This Month, All Time) and custom datetime range inputs (`<input type="datetime-local">`) to filter live incoming orders.
+  2. *Bi-Directional Timestamp Sorting*: Integrated toggleable ascending (`Oldest First`) and descending (`Newest First`) sorting on the `created_at` timestamp with visual indicator arrows in both the toolbar and table column header.
+  3. *Active Filter Summary & CSV Integration*: Filtered metrics calculate the exact volume and order count in real-time (`Showing X of Y orders • Filtered Total: Rp Z`), and the 1-click CSV/Excel exporter automatically produces time-scoped audit reports matching active date filters.
+- **Key Engineering Actions:**
+  1. Created `DatePreset` type and added state variables: `datePreset`, `startDate`, `endDate`, `sortOrder`, and `showCustomDatePicker` in `src/app/admin/dashboard/page.tsx`.
+  2. Implemented `matchesDate()` filter evaluation and multi-dimensional sorting logic in `filteredOrders`.
+  3. Styled and rendered the Date & Time filter toolbar in `src/app/admin/dashboard/page.tsx` featuring preset pill selectors, dark-mode native datetime pickers, active filter badges with 1-click dismiss, and a "Reset Filters" action.
+  4. Made the `Date & Time` table header column clickable to dynamically toggle chronological sorting.
+  5. Updated and synchronized documentation across `docs/PRD_AND_ERD.md`, `docs/SYSTEM_FLOWCHART.md`, `docs/AI_PROMPT_LOG.md`, `docs/User Documentation-Azmi.html`, and `README.md`.
+  6. Verified production build with `npm run build` — 100% successful with 0 errors and 0 lint warnings.
+
